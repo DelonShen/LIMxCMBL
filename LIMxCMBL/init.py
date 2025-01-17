@@ -24,6 +24,6 @@ chimax = ccl.comoving_radial_distance(cosmo, amax)
 # sampling density
 ells = np.logspace(1, np.log10(5000), 100)
 
-eps = 1e-8
-chibs = np.logspace(1, np.log10(chimax), 2**5) #2**5 seems good
-deltas = np.logspace(-6, np.log10(1-eps), 2**6)
+eps = 0.3
+chibs = np.linspace(10, chimax, 2**6)
+deltas = np.logspace(-6, np.log10(1-eps), 2**7)

@@ -10,20 +10,23 @@ ell_curr = ells[ell_idx]
 oup_fname = '/scratch/users/delon/LIMxCMBL/dkparp_integral/ell_%.8f.npy'%(ell_curr)
 print('outputting to', oup_fname)
 
+print('chib bounds', min(chibs), max(chibs))
+print('delta bounds', min(deltas), max(deltas))
 _chibs, _deltas = np.meshgrid(chibs, deltas, indexing='ij')
 print('oup dimension', _chibs.shape)
 
 _chibs  = np.reshape(_chibs,  (len(chibs) * len(deltas)))
 _deltas = np.reshape(_deltas, (len(chibs) * len(deltas)))
 
-kperp2s = ell_curr**2 / (_chibs**2 * (1 - _deltas**2))
+print('geometric recalibration')
+kperp2s = ell_curr*(ell_curr+1) / (_chibs**2 * (1 - _deltas**2))
 
 from scipy.integrate import quad, quad_vec
 from scipy.interpolate import interp1d
 
 for i in range(len(chibs)):
     for j in range(len(deltas)):
-        assert(np.abs(kperp2s[i*len(deltas)+j] - ell_curr**2 / (chibs[i]**2 * (1 - deltas[j]**2))) < 1e-8)
+        assert(np.abs(kperp2s[i*len(deltas)+j] - ell_curr*(ell_curr+1) / (chibs[i]**2 * (1 - deltas[j]**2))) < 1e-8)
 
 def integrand(kparp):
     return 2/(2*np.pi) * np.cos(kparp * 2 * _chibs * _deltas) * ccl.linear_matter_power(cosmo, np.sqrt(kparp**2 + kperp2s), 1)
