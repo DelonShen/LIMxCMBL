@@ -5,7 +5,7 @@ for curr in {0..99}; do
     # Set the Slurm job parameters
     job_name_prefix="inner-integral-ell-idx-${curr}"
     output_dir="logs"
-    time_limit="12:00:00"
+    time_limit="60:00:00"
     partition="kipac"
     num_nodes=1
     mem_per_node="64G"

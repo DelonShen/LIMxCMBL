@@ -25,5 +25,5 @@ chimax = ccl.comoving_radial_distance(cosmo, amax)
 ells = np.logspace(1, np.log10(5000), 100)
 
 eps = 0.3
-chibs = np.linspace(10, chimax, 2**6)
+chibs = np.linspace(10, chimax, 2**8)
 deltas = np.logspace(-6, np.log10(1-eps), 2**7)
