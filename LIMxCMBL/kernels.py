@@ -180,3 +180,9 @@ def get_f_KILo(external_chi, Lambda):
                     fill_value='extrapolate')
 
 
+def get_f_KILo_noLC(external_chi, Lambda, mean):
+    prefactor = Lambda / np.pi #units 1/cMpc
+    return interp1d(chis, prefactor*mean*np.sinc(Lambda*(external_chi - chis)),
+                    bounds_error = False,
+                    fill_value='extrapolate')
+
