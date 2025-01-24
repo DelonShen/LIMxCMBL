@@ -16,14 +16,14 @@ cosmo = ccl.Cosmology(Omega_c=Omc, Omega_b=Omb,
 
 
 # sampling range
-zmax = 20
-amax = 1/(zmax+1)
-chimax = ccl.comoving_radial_distance(cosmo, amax)
+zmax_sample = 20
+amax_sample = 1/(zmax_sample+1)
+chimax_sample = ccl.comoving_radial_distance(cosmo, amax_sample)
 
 
 # sampling density
 ells = np.logspace(1, np.log10(5000), 100)
 
 eps = 0.3
-chibs = np.linspace(10, chimax, 2**8)
+chibs = np.linspace(10, chimax_sample, 2**8)
 deltas = np.logspace(-6, np.log10(1-eps), 2**7)

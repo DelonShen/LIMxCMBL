@@ -2,7 +2,7 @@ from .init import *
 from scipy.interpolate import interp1d
 
 
-chis = np.linspace(0, chimax, 11234)
+chis = np.linspace(0, chimax_sample, 11234)
 a_s = ccl.scale_factor_of_chi(cosmo, chis)
 zs = 1/a_s - 1
 Dz = ccl.growth_factor(cosmo, a_s)
