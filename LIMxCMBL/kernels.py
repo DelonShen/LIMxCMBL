@@ -154,10 +154,6 @@ bL_avg = simps(integrand_bias, np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ Lz
 nu_CII = cu.c / (158*u.um)
 Hzbit = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_CII)
 
-
-
-
-
 KI = Dz*(bL_avg * Lz * Hzbit).to(u.kJy/u.sr)
 
 def get_f_KI():
