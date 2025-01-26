@@ -182,3 +182,13 @@ def get_f_KILo_noLC(external_chi, Lambda, mean):
                     bounds_error = False,
                     fill_value='extrapolate')
 
+
+def low_pass_sigma(Lambda):
+    return Lambda / np.sqrt(2 * np.log(2))
+
+def get_f_KILo_Gaussian(external_chi, Lambda):
+    sigma = low_pass_sigma(Lambda)
+    prefactor = np.sqrt(2 * np.pi) * sigma
+    return interp1d(chis, prefactor*KI*np.exp(-sigma**2*(external_chi - chis)**2 / 2),
+                    bounds_error = False,
+                    fill_value='extrapolate')
