@@ -6,7 +6,8 @@ import sys
 zmin = np.float64(sys.argv[1])
 zmax = np.float64(sys.argv[2])
 Lambda = np.float64(sys.argv[3]) # 1 / cMpc 
-oup_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/zmin_%.5f_zmax_%.5f_Lambda_%.5f.npy'%(zmin, zmax, Lambda)
+chis_resample_len = int(np.log2(len(chis_resample)))
+oup_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/zmin_%.5f_zmax_%.5f_Lambda_%.5f_chi_sample_2e%d.npy'%(zmin, zmax, Lambda,chis_resample_len)
 print('outputting to', oup_fname)
 
 

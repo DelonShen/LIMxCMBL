@@ -4,7 +4,7 @@ zmax=$2
 
 lambda_values=$(python3 -c '
 import numpy as np
-lambdas = np.logspace(-5, 0, 100)
+lambdas = np.logspace(-5, 0, 50)
 print("\n".join(map(str, lambdas)))
 ')
 
@@ -15,7 +15,7 @@ partition="kipac"
 time_limit="24:00:00"
 num_nodes=1
 mem_per_node="64G"
-cpus_per_task=32
+cpus_per_task=16
 output_dir="logs"
 
 mkdir -p ${output_dir}
