@@ -26,18 +26,22 @@ f_KLIM_windowed = apply_window(f_K = f_KLIM,
 Ik = d_delta_integral(f_KLIM_windowed, f_Kkappa)
 
 
+############
 #<ILo Kappa>
-ILok = np.zeros((len(ells), len(chibs)), dtype=np.float128)
-
 from tqdm import trange
+ILok = np.zeros((len(ells), len(chis_resample)), dtype=np.float32)
+external_chis = chis_resample.reshape(-1,1, 1, 1)
 
-for chi_idx in trange(len(chibs)):
-    chi = chibs[chi_idx]
-    f_KLIMLo   = get_f_KILo(external_chi = chi, Lambda=Lambda)
+for i in trange(len(chis_resample) // 2**3):
+    idx_left = i * 2**3
+    idx_right = (i+1) * 2 ** 3
+    f_KLIMLo = get_f_KILo(external_chi = external_chis[idx_left:idx_right], Lambda=Lambda)
     f_KLIMLo_windowed = apply_window(f_K = f_KLIMLo,
                                      chimin = chimin,
                                      chimax = chimax)
-    ILok[:, chi_idx] = d_chib_integral(f_KLIMLo_windowed, f_Kkappa)
+    ILok[:, idx_left:idx_right] = d_chib_integral(f_KLIMLo_windowed, f_Kkappa).T
+############
+
 
 
 oup_ILo_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/ILoKappa/zmin_%.5f_zmax_%.5f_Lambda_%.5f.npy'%(zmin, zmax, Lambda)
@@ -48,4 +52,3 @@ np.save(oup_fname, IHi_kappa)
 
 print('outputted ILoK to', oup_ILo_fname)
 print('outputted IHiK to', oup_fname)
-

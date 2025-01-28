@@ -2,7 +2,7 @@ from .init import *
 from scipy.interpolate import interp1d
 
 
-chis = np.linspace(0, chimax_sample, 11234)
+chis = np.linspace(0, chimax_sample, 10**4)
 a_s = ccl.scale_factor_of_chi(cosmo, chis)
 zs = 1/a_s - 1
 Dz = ccl.growth_factor(cosmo, a_s)
@@ -161,20 +161,14 @@ def get_f_KI():
                     bounds_error = False,
                     fill_value='extrapolate')
 
-
 def apply_window(f_K, chimin, chimax):
     _window = np.zeros_like(chis)
     _window[(chis > chimin) & (chis < chimax)] = 1
-    return interp1d(chis, f_K(chis) * _window,
-                    bounds_error = False,
-                    fill_value='extrapolate')
+    return lambda chi : f_K(chi) * interp1d(chis, _window, fill_value = 'extrapolate')(chi)
 
 def get_f_KILo(external_chi, Lambda):
     prefactor = Lambda / np.pi #units 1/cMpc
-    return interp1d(chis, prefactor*KI*np.sinc(Lambda*(external_chi - chis)),
-                    bounds_error = False,
-                    fill_value='extrapolate')
-
+    return lambda chi : prefactor * get_f_KI()(chi) * np.sinc(Lambda * (external_chi - chi))
 
 def get_f_KILo_noLC(external_chi, Lambda, mean):
     prefactor = Lambda / np.pi #units 1/cMpc

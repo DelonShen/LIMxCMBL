@@ -2,42 +2,32 @@ from LIMxCMBL.init import *
 from scipy.interpolate import interp1d
 
 inner_dkparp_integral = np.load('/oak/stanford/orgs/kipac/users/delon/LIMxCMBL/inner_dkparp_integral.npy')
-reversed_inner_dkparp_integral = inner_dkparp_integral[:, :, ::-1]
-middle_inner_dkpar_integral = inner_dkparp_integral[:, :, 0:1]
+f_inner_integral = interp1d(x = chibs, y = inner_dkparp_integral, axis = 1)
 
-
-deltas_full = np.concatenate((-deltas[::-1], 
-                              [0], 
-                              deltas))
 
 from scipy.integrate import quad, quad_vec, trapezoid
 
-chibs_reshaped = chibs.reshape(1, -1, 1)
-deltas_reshaped = deltas_full.reshape(1, 1, -1)
+deltas_reshaped = deltas.reshape(1, 1, -1)
 
-psi_args = chibs_reshaped * (1 - deltas_reshaped)
-phi_args = chibs_reshaped * (1 + deltas_reshaped)
 
+#2^13 samples is what is needed to properly evaluate Lambda = 1.0 
+#for Lambda < 1.0 you can get away with less,
+#basically we compare Lambda with 2*np.pi/np.mean(np.diff(np.linspace(0, chimax_sample, 2**13)))
+chis_resample = np.linspace(10, chimax_sample, 2**13)
+chis_reshaped = chis_resample.reshape(1, -1, 1)
+minus_args = chis_reshaped * (1 - deltas_reshaped)
+plus_args  = chis_reshaped * (1 + deltas_reshaped)
 
 def d_delta_integral(f_Kpsi, f_Kphi):
-
-    f_psi_term = f_Kpsi(psi_args)
-    f_phi_term = f_Kphi(phi_args)
-
-
-    inner_dkarp_integral_full = np.concatenate(
-        [reversed_inner_dkparp_integral, middle_inner_dkpar_integral, inner_dkparp_integral],
-        axis=2)
-
-
-    integrand = (f_psi_term * f_phi_term / chibs_reshaped**2 * 
-                2 * chibs_reshaped * inner_dkarp_integral_full)
-    
-    return trapezoid(y=integrand, x=deltas_full)
+    prefactor = 2 / chis_reshaped
+    kernels = (f_Kpsi(minus_args) * f_Kphi(plus_args) + f_Kpsi(plus_args) * f_Kphi(minus_args))
+    inner_integral_resampled = f_inner_integral(chis_resample)
+    integrand = prefactor*kernels*inner_integral_resampled*deltas_reshaped
+    return trapezoid(y=integrand, x=np.log(deltas), axis = -1)
 
 def d_chib_integral(f_Kpsi, f_Kphi):
     integrand = d_delta_integral(f_Kpsi, f_Kphi)
-    oup = trapezoid(x = chibs, y = integrand)
+    oup = trapezoid(x = chis_resample, y = integrand)
     return oup
 
 
