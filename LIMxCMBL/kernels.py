@@ -166,6 +166,13 @@ def apply_window(f_K, chimin, chimax):
     _window[(chis > chimin) & (chis < chimax)] = 1
     return lambda chi : f_K(chi) * interp1d(chis, _window, fill_value = 'extrapolate')(chi)
 
+def apply_window_tanh(f_K, chimin, chimax):
+    dchi = 100
+    _window = 0.5*(1 + np.tanh((chis - chimin)/dchi)) *0.5*(1 + np.tanh((chimax-chis)/dchi) )
+    return lambda chi : f_K(chi) * interp1d(chis, _window, fill_value = 'extrapolate')(chi)
+
+
+
 def get_f_KILo(external_chi, Lambda):
     prefactor = Lambda / np.pi #units 1/cMpc
     return lambda chi : prefactor * get_f_KI()(chi) * np.sinc(Lambda * (external_chi - chi))
