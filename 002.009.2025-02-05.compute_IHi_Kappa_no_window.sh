@@ -9,7 +9,7 @@ readarray -t lambdas <<< "$lambda_values"
 
 # Set the Slurm parameters
 partition="owners"
-time_limit="24:00:00"
+time_limit="30:00"
 num_nodes=1
 mem_per_node="64G"
 cpus_per_task=1

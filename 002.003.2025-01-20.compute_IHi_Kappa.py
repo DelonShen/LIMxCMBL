@@ -8,6 +8,7 @@ zmax = np.float64(sys.argv[2])
 Lambda = np.float64(sys.argv[3]) # 1 / cMpc 
 chis_resample_len = int(np.log2(len(chis_resample)))
 oup_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/zmin_%.5f_zmax_%.5f_Lambda_%.5f_chi_sample_2e%d.npy'%(zmin, zmax, Lambda,chis_resample_len)
+oup_ILo_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/ILoKappa/zmin_%.5f_zmax_%.5f_Lambda_%.5f_chi_sample_2e%d.npy'%(zmin, zmax, Lambda,chis_resample_len)
 print('outputting to', oup_fname)
 
 
@@ -45,7 +46,6 @@ for i in trange(len(chis_resample) // 2**3):
 
 
 
-oup_ILo_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/ILoKappa/zmin_%.5f_zmax_%.5f_Lambda_%.5f.npy'%(zmin, zmax, Lambda)
 np.save(oup_ILo_fname, ILok)
 
 IHi_kappa = Ik - ILok

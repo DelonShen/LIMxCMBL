@@ -175,14 +175,8 @@ def apply_window_tanh(f_K, chimin, chimax):
 
 def get_f_KILo(external_chi, Lambda):
     prefactor = Lambda / np.pi #units 1/cMpc
-    return lambda chi : prefactor * get_f_KI()(chi) * np.sinc(Lambda * (external_chi - chi))
-
-def get_f_KILo_noLC(external_chi, Lambda, mean):
-    prefactor = Lambda / np.pi #units 1/cMpc
-    return interp1d(chis, prefactor*mean*np.sinc(Lambda*(external_chi - chis)),
-                    bounds_error = False,
-                    fill_value='extrapolate')
-
+    # the extra factor of pi is to follow numpy's sinc convention
+    return lambda chi : prefactor * get_f_KI()(chi) * np.sinc(Lambda * (external_chi - chi) / np.pi)
 
 def low_pass_sigma(Lambda):
     return Lambda / np.sqrt(2 * np.log(2))

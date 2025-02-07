@@ -15,7 +15,7 @@ partition="kipac"
 time_limit="24:00:00"
 num_nodes=1
 mem_per_node="64G"
-cpus_per_task=16
+cpus_per_task=1
 output_dir="logs"
 
 mkdir -p ${output_dir}

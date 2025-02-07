@@ -22,15 +22,15 @@ def get_eHIeHI(chimin, chimax, Lambda):
 
 #    print('computing eIeLO')
     eIeLO = np.zeros_like(eHIeHI)
-    eIeLO = 1/_chis**2 * Lambda / np.pi * np.sinc(Lambda * (_chis - _chips))
+    eIeLO = 1/_chis**2 * Lambda / np.pi * np.sinc(Lambda * (_chis - _chips) / np.pi)
 
 #    print('computing eLOeI')
     eLOeI = np.zeros_like(eHIeHI)
-    eLOeI = 1/_chips**2 * Lambda / np.pi * np.sinc(Lambda * (_chis - _chips))
+    eLOeI = 1/_chips**2 * Lambda / np.pi * np.sinc(Lambda * (_chis - _chips) / np.pi)
 
 #    print('computing eLOeLO')
     def integrand(_chib):
-        return Lambda**2 / np.pi**2 / _chib ** 2 * np.sinc(Lambda * (_chis - _chib)) * np.sinc(Lambda * (_chips - _chib))
+        return Lambda**2 / np.pi**2 / _chib ** 2 * np.sinc(Lambda * (_chis - _chib) / np.pi) * np.sinc(Lambda * (_chips - _chib) / np.pi)
     eLOeLO, _ = quad_vec(integrand, chimin, chimax, 
                       epsabs = 0.0, epsrel = 1e-3)
 
