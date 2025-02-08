@@ -10,10 +10,7 @@ from scipy.integrate import quad, quad_vec, trapezoid
 deltas_reshaped = deltas.reshape(1, 1, -1)
 
 
-#2^13 samples is what is needed to properly evaluate Lambda = 1.0 
-#for Lambda < 1.0 you can get away with less,
-#basically I compare Lambda with 2*np.pi/np.mean(np.diff(np.linspace(0, chimax_sample, 2**13)))
-chis_resample = np.linspace(10, chimax_sample, 2**13)
+chis_resample = np.linspace(10, chimax_sample, 2**14)
 chis_reshaped = chis_resample.reshape(1, -1, 1)
 minus_args = chis_reshaped * (1 - deltas_reshaped)
 plus_args  = chis_reshaped * (1 + deltas_reshaped)

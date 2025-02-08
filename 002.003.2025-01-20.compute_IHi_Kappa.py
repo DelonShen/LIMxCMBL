@@ -33,10 +33,10 @@ Ik = d_delta_integral(f_KLIM_windowed, f_Kkappa)
 from tqdm import trange
 ILok = np.zeros((len(ells), len(chis_resample)), dtype=np.float32)
 external_chis = chis_resample.reshape(-1,1, 1, 1)
-
-for i in trange(len(chis_resample) // 2**3):
-    idx_left = i * 2**3
-    idx_right = (i+1) * 2 ** 3
+chunk = 2
+for i in trange(len(chis_resample) // 2**chunk):
+    idx_left = i * 2**chunk
+    idx_right = (i+1) * 2**chunk
     f_KLIMLo = get_f_KILo(external_chi = external_chis[idx_left:idx_right], Lambda=Lambda)
     f_KLIMLo_windowed = apply_window(f_K = f_KLIMLo,
                                      chimin = chimin,
