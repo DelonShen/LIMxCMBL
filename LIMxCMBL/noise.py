@@ -32,6 +32,6 @@ def get_eHIeHI(chimin, chimax, Lambda):
     def integrand(_chib):
         return Lambda**2 / np.pi**2 / _chib ** 2 * np.sinc(Lambda * (_chis - _chib) / np.pi) * np.sinc(Lambda * (_chips - _chib) / np.pi)
     eLOeLO, _ = quad_vec(integrand, chimin, chimax, 
-                      epsabs = 0.0, epsrel = 1e-5)
+                      epsabs = 0.0, epsrel = 1e-10)
 
     return eIeI, eLOeLO, eIeLO, eLOeI
