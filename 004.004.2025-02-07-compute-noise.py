@@ -10,7 +10,8 @@ zmax = np.float64(sys.argv[2])
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
 
-Lambdas = np.logspace(-4, -1, 50)
+#Lambdas = np.logspace(-4, -1, 50)
+Lambdas = np.logspace(-5, 0, 50)
 print(Lambdas)
 chis_resample_len = int(np.log2(len(chis_resample)))
 window = np.where((chis_resample > chimin) & (chis_resample < chimax))[0]
