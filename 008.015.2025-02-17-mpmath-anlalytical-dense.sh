@@ -1,35 +1,32 @@
 #!/bin/bash
-zmin=$1
-zmax=$2
-
 lambda_values=$(python3 -c '
 import numpy as np
 lambdas = np.logspace(-5, -1, 50)
-print("\n".join(map(str, lambdas)))
+lambda_idxs = np.where(lambdas > 5e-4)[0]
+print("\n".join(map(str, lambda_idxs)))
 ')
 
-readarray -t lambdas <<< "$lambda_values"
+readarray -t lambda_idxs <<< "$lambda_values"
 
 # Set the Slurm parameters
 partition="kipac"
-time_limit="3:00:00"
+time_limit="24:00:00"
 num_nodes=1
 mem_per_node="64G"
-cpus_per_task=1
+cpus_per_task=32
 output_dir="logs"
 
 mkdir -p ${output_dir}
 
 date=$(date +%Y-%m-%d)
 
-for lambda in "${lambdas[@]}"; do
-    echo $lambda
-    lambda_formatted=$(echo $lambda | tr '.' 'p')
+for lambda_idx in "${lambda_idxs[@]}"; do
+    echo $lambda_idx
+    lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="IHi-kappa-Lambda-${lambda_formatted}-zmin-${zmin}-zmax-${zmax}"
+    job_name="IHi-kappa-Lambda-idx-${lambda_formatted}"
     output_file="${output_dir}/${date}-${job_name}.out"
     error_file="${output_dir}/${date}-${job_name}.err"
-    
     sbatch << EOF
 #!/bin/bash
 #SBATCH --job-name=${job_name}
@@ -41,10 +38,9 @@ for lambda in "${lambdas[@]}"; do
 #SBATCH --mem=${mem_per_node}
 #SBATCH --cpus-per-task=${cpus_per_task}
 
-python -u 002.003.2025-01-20.compute_IHi_Kappa.py ${zmin} ${zmax} ${lambda}
+python -u 008.015.2025-02-17-mpmath-anlalytical-dense.py ${lambda_idx}
 EOF
-
-    echo "Submitted job for Lambda = ${lambda}"
+    echo "Submitted job for Lambda idx = ${lambda_idx}"
 done
 
 echo "All jobs submitted"

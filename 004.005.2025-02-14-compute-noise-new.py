@@ -34,7 +34,7 @@ from numba import njit
     
 for Lambda in tqdm(Lambdas):
     print(Lambda)
-    if(Lambda < 1e-3):
+    if(Lambda < 1e-2):
         continue
 
     f_eIeI = lambda chi, chip, dchi : 1 / (dchi * chi ** 2)
@@ -52,7 +52,7 @@ for Lambda in tqdm(Lambdas):
 
     eLOeLO, _ = quad_vec(integrand, chimin, chimax, epsabs = 0.0, epsrel = 1e-3, workers = 32)
 
-    oup_fname = '/scratch/users/delon/LIMxCMBL/eHIeHI/zmin_%.5f_zmax_%.5f_Lambda_%.5e_chi_sample_2e%d'%(zmin, zmax, Lambda,chis_resample_len)
+    oup_fname = '/scratch/users/delon/LIMxCMBL/eHIeHI/superdense_zmin_%.5f_zmax_%.5f_Lambda_%.5e_chi_sample_2e%d'%(zmin, zmax, Lambda,chis_resample_len)
     np.save(oup_fname + 'eIeI.npy'  , eIeI)
     np.save(oup_fname + 'eIeLO.npy' , eIeLO)
     np.save(oup_fname + 'eLOeI.npy' , eLOeI)

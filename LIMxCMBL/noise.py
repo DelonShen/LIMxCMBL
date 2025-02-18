@@ -4,8 +4,124 @@ from LIMxCMBL.cross_spectrum import *
 from scipy.integrate import quad_vec, trapezoid
 from tqdm import trange
 
+
+
+from sympy.parsing.mathematica import parse_mathematica
+from sympy import lambdify
+import mpmath as mpm
+
+from multiprocessing import Pool
+from itertools import product
+from tqdm import tqdm
+import pickle
+mpm.mp.dps = 100;
+
+eLOeLO_diag_mathematica = None
+with open('008.008.eLOeLO_diag_mathematica.txt', 'r') as f:
+    eLOeLO_diag_mathematica = f.read()
+eLOeLO_diag_mathematica = eLOeLO_diag_mathematica.replace('\[Pi]', 'Pi')
+eLOeLO_diag_sympy = parse_mathematica(eLOeLO_diag_mathematica)
+modules = [
+        {
+            'Ci': mpm.ci,
+            'Si': mpm.si,
+            'Cos': mpm.cos,
+            'Sin': mpm.sin,
+            'Log': mpm.log,
+            'I': 1j,},
+        'mpmath']
+eLOeLO_diag_numpy = lambdify(list(eLOeLO_diag_sympy.free_symbols), 
+                             eLOeLO_diag_sympy, modules=modules)
+
+eLOeLO_off_diag_mathematica = None
+with open('008.008.eLOeLO_off_diag_mathematica.txt', 'r') as f:
+    eLOeLO_off_diag_mathematica = f.read()
+eLOeLO_off_diag_mathematica = eLOeLO_off_diag_mathematica.replace('\[Pi]', 'Pi')
+eLOeLO_off_diag_sympy = parse_mathematica(eLOeLO_off_diag_mathematica)
+eLOeLO_off_diag_numpy = lambdify(list(eLOeLO_off_diag_sympy.free_symbols), 
+                             eLOeLO_off_diag_sympy, modules=modules)
+
+
+
+
+
+f_eIeI = lambda chi, dchi, Lambda : 1 / (dchi * chi ** 2)
+f_cross = lambda chi, chip, Lambda : (1/chi**2  * Lambda / np.pi * np.sinc(Lambda * (chi - chip) / np.pi)
+                              + 1/chip**2 * Lambda / np.pi * np.sinc(Lambda * (chi - chip) / np.pi))
+
+f_cross_mpm = lambda chi, chip, Lambda : (1/chi**2  * Lambda / mpm.pi * mpm.sinc(Lambda * (chi - chip))
+                              + 1/chip**2 * Lambda / mpm.pi * mpm.sinc(Lambda * (chi - chip)))
+
+
+def compute_elementLOLO(params):
+    idx1, idx2, chimin, chimax, chi1, chi2, Lambda = params
+    if idx1 == idx2:
+        return (idx1, idx2, eLOeLO_diag_numpy(a=chimin, b=chimax, x=chi1, L=Lambda))
+    else:
+        return (idx1, idx2, eLOeLO_off_diag_numpy(a=chimin, b=chimax, x=chi1, xp=chi2, L=Lambda))
+
+
+
+def compute_element(params):
+    idx1, idx2, chimin, chimax, chi1, chi2, Lambda, dchi = params
+    if idx1 == idx2:
+        return (idx1, idx2, 
+                f_eIeI(chi1, dchi, Lambda), 
+                f_cross_mpm(chi1, chi2, Lambda), 
+                eLOeLO_diag_numpy(a=chimin, b=chimax, x=chi1, L=Lambda))
+    else:
+        return (idx1, idx2, 
+                0, 
+                f_cross_mpm(chi1, chi2, Lambda), 
+                eLOeLO_off_diag_numpy(a=chimin, b=chimax, x=chi1, xp=chi2, L=Lambda))
+
+def f_eHIeHI(chimin, chimax, dchi, chis, Lambda):
+    n = len(chis)
+    eIeI = [[0] * n for _ in range(n)]
+    cross = [[0] * n for _ in range(n)]
+    eLOeLO = [[0] * n for _ in range(n)]
+  
+
+    params = [
+        (i, j, chimin, chimax, chis[i], chis[j], Lambda, dchi)
+        for i in range(n) for j in range(i, n)
+    ]
+    
+    with Pool(processes=32) as pool:
+        results = list(tqdm(
+            pool.imap(compute_element, params),
+            total=len(params),
+            desc="Computing matrix elements"
+        ))
+
+    return results
+
+
+def f_eLOeLO(chimin, chimax, chis, Lambda):
+    n = len(chis)
+    ret = [[0] * n for _ in range(n)]
+    
+
+    params = [
+        (i, j, chimin, chimax, chis[i], chis[j], Lambda)
+        for i, j in product(range(n), range(n))
+    ]
+    
+    with Pool(processes=32) as pool:
+        results = list(tqdm(
+            pool.imap(compute_elementLOLO, params),
+            total=len(params),
+            desc="Computing matrix elements"
+        ))
+    
+    for i, j, value in results:
+        ret[i][j] = value
+    
+    return mpm.matrix(ret)
+
 def get_eHIeHI(chimin, chimax, Lambda):
     """
+    DEPRECEATED 
     No PeI included, have to multiply afterwards
     """
     chis_restricted = chis_resample[np.where((chis_resample >= chimin) & (chis_resample <= chimax))]
