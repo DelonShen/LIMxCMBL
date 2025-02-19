@@ -4,7 +4,7 @@ zmax=$2
 
 lambda_values=$(python3 -c '
 import numpy as np
-lambdas = np.logspace(-5, -1, 50)
+lambdas = np.logspace(-5, 0, 50)
 print("\n".join(map(str, lambdas)))
 ')
 

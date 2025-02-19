@@ -27,3 +27,6 @@ ells = np.logspace(1, np.log10(5000), 100)
 eps = 0.3
 chibs = np.linspace(10, chimax_sample, 2**8)
 deltas = np.logspace(-6, np.log10(1-eps), 2**7)
+
+
+Lambdas = np.logspace(-5, -1, 25)

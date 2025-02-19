@@ -17,25 +17,24 @@ Lambda_idx = np.int32(sys.argv[1])
 # CCAT-prime
 zmin = 3.5
 zmax = 8.1
-factor = 8
-Lambdas = np.logspace(-5, 0, 50)
-Lambda = Lambdas[Lambda_idx]
-
-oup_fname = '/scratch/users/delon/LIMxCMBL/eHIeHI/mpmath_zmin_%.5f_zmax_%.5f_Lambda_%.5e_factor_%d.npy'%(zmin, zmax, Lambda, factor)
-print(oup_fname)
-
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
-window = np.where((chis_resample > chimin) & (chis_resample < chimax))[0]
-chis_restricted = chis_resample[np.where((chis_resample >= chimin) & (chis_resample <= chimax))]
 
-_chimin, _chimax = chis_resample[window][0], chis_resample[window][-1]
+Lambda = Lambdas[Lambda_idx]
+log2 = 13
+
+oup_fname = '/scratch/users/delon/LIMxCMBL/eHIeHI/mpmath_zmin_%.5f_zmax_%.5f_Lambda_%.5e_log2_%d.npy'%(zmin, zmax, Lambda, log2)
+print(oup_fname)
+
+external_chis   = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), 2**log2)
+analytical_diag = np.real(eLOeLO_diag_numpy(a = chimin, 
+                                            b = chimax, 
+                                            x = external_chis, 
+                                            L = Lambda))
 
 
 
-mpm_chis_dense = mpm.linspace(np.min(chis_restricted), 
-                              np.max(chis_restricted), 
-                              factor * len(chis_restricted))
+mpm_chis_dense = mpm.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), 2**log2)
 mpm_dchi = mpm_chis_dense[1] - mpm_chis_dense[0]
 
 results = f_eHIeHI(chimin = chimin, 

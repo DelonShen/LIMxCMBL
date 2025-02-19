@@ -14,13 +14,22 @@ from multiprocessing import Pool
 from itertools import product
 from tqdm import tqdm
 import pickle
-mpm.mp.dps = 100;
+mpm.mp.dps = 33;
 
+#load into sympy
 eLOeLO_diag_mathematica = None
 with open('008.008.eLOeLO_diag_mathematica.txt', 'r') as f:
     eLOeLO_diag_mathematica = f.read()
 eLOeLO_diag_mathematica = eLOeLO_diag_mathematica.replace('\[Pi]', 'Pi')
 eLOeLO_diag_sympy = parse_mathematica(eLOeLO_diag_mathematica)
+
+eLOeLO_off_diag_mathematica = None
+with open('008.008.eLOeLO_off_diag_mathematica.txt', 'r') as f:
+    eLOeLO_off_diag_mathematica = f.read()
+eLOeLO_off_diag_mathematica = eLOeLO_off_diag_mathematica.replace('\[Pi]', 'Pi')
+eLOeLO_off_diag_sympy = parse_mathematica(eLOeLO_off_diag_mathematica)
+
+#turn into mpmath function
 modules = [
         {
             'Ci': mpm.ci,
@@ -30,16 +39,40 @@ modules = [
             'Log': mpm.log,
             'I': 1j,},
         'mpmath']
-eLOeLO_diag_numpy = lambdify(list(eLOeLO_diag_sympy.free_symbols), 
+
+
+eLOeLO_off_diag_mpmath = lambdify(list(eLOeLO_off_diag_sympy.free_symbols), 
+                             eLOeLO_off_diag_sympy, modules=modules)
+eLOeLO_diag_mpmath = lambdify(list(eLOeLO_diag_sympy.free_symbols), 
                              eLOeLO_diag_sympy, modules=modules)
 
-eLOeLO_off_diag_mathematica = None
-with open('008.008.eLOeLO_off_diag_mathematica.txt', 'r') as f:
-    eLOeLO_off_diag_mathematica = f.read()
-eLOeLO_off_diag_mathematica = eLOeLO_off_diag_mathematica.replace('\[Pi]', 'Pi')
-eLOeLO_off_diag_sympy = parse_mathematica(eLOeLO_off_diag_mathematica)
+
+
+#turn into scipy function
+from scipy import special
+def SinIntegral(x):
+    si, _ = special.sici(x)
+    return si
+
+def CosIntegral(x):
+    _, ci = special.sici(x)
+    return ci
+
+modules = [
+    {
+        'Ci': CosIntegral,
+        'Si': SinIntegral,
+        'Cos': np.cos,
+        'Sin': np.sin,
+        'Log': np.log,
+        'I': 1j,
+    },
+    'numpy'
+]
 eLOeLO_off_diag_numpy = lambdify(list(eLOeLO_off_diag_sympy.free_symbols), 
                              eLOeLO_off_diag_sympy, modules=modules)
+eLOeLO_diag_numpy = lambdify(list(eLOeLO_diag_sympy.free_symbols), 
+                             eLOeLO_diag_sympy, modules=modules)
 
 
 
@@ -56,9 +89,9 @@ f_cross_mpm = lambda chi, chip, Lambda : (1/chi**2  * Lambda / mpm.pi * mpm.sinc
 def compute_elementLOLO(params):
     idx1, idx2, chimin, chimax, chi1, chi2, Lambda = params
     if idx1 == idx2:
-        return (idx1, idx2, eLOeLO_diag_numpy(a=chimin, b=chimax, x=chi1, L=Lambda))
+        return (idx1, idx2, eLOeLO_diag_mpmath(a=chimin, b=chimax, x=chi1, L=Lambda))
     else:
-        return (idx1, idx2, eLOeLO_off_diag_numpy(a=chimin, b=chimax, x=chi1, xp=chi2, L=Lambda))
+        return (idx1, idx2, eLOeLO_off_diag_mpmath(a=chimin, b=chimax, x=chi1, xp=chi2, L=Lambda))
 
 
 
@@ -68,12 +101,12 @@ def compute_element(params):
         return (idx1, idx2, 
                 f_eIeI(chi1, dchi, Lambda), 
                 f_cross_mpm(chi1, chi2, Lambda), 
-                eLOeLO_diag_numpy(a=chimin, b=chimax, x=chi1, L=Lambda))
+                eLOeLO_diag_mpmath(a=chimin, b=chimax, x=chi1, L=Lambda))
     else:
         return (idx1, idx2, 
                 0, 
                 f_cross_mpm(chi1, chi2, Lambda), 
-                eLOeLO_off_diag_numpy(a=chimin, b=chimax, x=chi1, xp=chi2, L=Lambda))
+                eLOeLO_off_diag_mpmath(a=chimin, b=chimax, x=chi1, xp=chi2, L=Lambda))
 
 def f_eHIeHI(chimin, chimax, dchi, chis, Lambda):
     n = len(chis)

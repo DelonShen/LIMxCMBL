@@ -1,8 +1,8 @@
 #!/bin/bash
 lambda_values=$(python3 -c '
 import numpy as np
-lambdas = np.logspace(-5, 0, 50)
-lambda_idxs = np.where((lambdas > 8e-4) & (lambdas < 2e-1))[0]
+lambdas = np.logspace(-5, -1, 25)
+lambda_idxs = np.where((lambdas > -1) & (lambdas < 100))[0]
 print("\n".join(map(str, lambda_idxs)))
 ')
 

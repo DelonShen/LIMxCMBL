@@ -1,8 +1,7 @@
 #!/bin/bash
 lambda_values=$(python3 -c '
 import numpy as np
-lambdas = np.logspace(-5, 0, 50)
-lambda_idxs = np.where((lambdas > 8e-4) & (lambdas < 2e-1))[0]
+lambda_idxs = np.arange(25)
 print("\n".join(map(str, lambda_idxs)))
 ')
 
@@ -10,10 +9,10 @@ readarray -t lambda_idxs <<< "$lambda_values"
 
 # Set the Slurm parameters
 partition="kipac"
-time_limit="8:00:00"
+time_limit="24:00:00"
 num_nodes=1
 mem_per_node="128G"
-cpus_per_task=32
+cpus_per_task=1
 output_dir="logs"
 
 mkdir -p ${output_dir}
@@ -24,7 +23,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
     echo $lambda_idx
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="noise-mpmath-Lambda-idx-${lambda_formatted}-factor-8"
+    job_name="snr-per-mode-scipy-Lambda-idx-${lambda_formatted}-log2-12"
     output_file="${output_dir}/${date}-${job_name}.out"
     error_file="${output_dir}/${date}-${job_name}.err"
     sbatch << EOF
@@ -38,7 +37,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
 #SBATCH --mem=${mem_per_node}
 #SBATCH --cpus-per-task=${cpus_per_task}
 
-python -u 008.015.2025-02-17-mpmath-anlalytical-dense.py ${lambda_idx}
+python -u 005.011.2025-02-18-SNR-diagonal-noise-dominated-CCAT-prime-specific.py ${lambda_idx}
 EOF
     echo "Submitted job for Lambda idx = ${lambda_idx}"
 done
