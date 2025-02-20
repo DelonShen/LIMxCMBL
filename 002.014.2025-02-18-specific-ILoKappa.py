@@ -7,7 +7,7 @@ from tqdm import trange
 import sys
 zmin = 3.5
 zmax = 8.1
-log2 = 13
+log2 = 14
 Lambda_idx = np.int32(sys.argv[1])
 Lambda = Lambdas[Lambda_idx]
 

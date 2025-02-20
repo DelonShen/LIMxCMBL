@@ -5,7 +5,7 @@ from LIMxCMBL.kernels import get_f_Kkappa, get_f_KI, get_f_KILo, apply_window
 import sys
 zmin = 3.5
 zmax = 8.1
-log2 = 15
+log2 = 14
 
 oup_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/Ik_zmin_%.5f_zmax_%.5f_chi_sample_%d.npy'%(zmin, zmax, log2)
 print(oup_fname)

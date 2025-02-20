@@ -2,7 +2,6 @@
 lambda_values=$(python3 -c '
 import numpy as np
 lambda_idxs = np.arange(25)
-lambda_idxs = [18]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
@@ -13,7 +12,7 @@ partition="kipac"
 time_limit="24:00:00"
 num_nodes=1
 mem_per_node="192G"
-cpus_per_task=1
+cpus_per_task=32
 output_dir="logs"
 
 mkdir -p ${output_dir}
@@ -24,7 +23,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
     echo $lambda_idx
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="snr-per-mode-scipy-Lambda-idx-${lambda_formatted}-log2-14"
+    job_name="ccat-prime-idx-${lambda_formatted}-log2-14"
     output_file="${output_dir}/${date}-${job_name}.out"
     error_file="${output_dir}/${date}-${job_name}.err"
     sbatch << EOF
@@ -38,7 +37,11 @@ for lambda_idx in "${lambda_idxs[@]}"; do
 #SBATCH --mem=${mem_per_node}
 #SBATCH --cpus-per-task=${cpus_per_task}
 
+python -u 002.014.2025-02-18-specific-ILoKappa.py ${lambda_idx}
+python -u 008.018.2025-02-18-mpmath-new-scheme.py ${lambda_idx}
 python -u 005.011.2025-02-18-SNR-diagonal-noise-dominated-CCAT-prime-specific.py ${lambda_idx}
+
+
 EOF
     echo "Submitted job for Lambda idx = ${lambda_idx}"
 done

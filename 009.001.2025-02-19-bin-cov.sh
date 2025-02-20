@@ -2,10 +2,11 @@
 lambda_values=$(python3 -c '
 import numpy as np
 lambda_idxs = np.arange(25)
-lambda_idxs = [18]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
+log2=14
+nbins=100
 readarray -t lambda_idxs <<< "$lambda_values"
 
 # Set the Slurm parameters
@@ -24,7 +25,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
     echo $lambda_idx
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="snr-per-mode-scipy-Lambda-idx-${lambda_formatted}-log2-14"
+    job_name="bin-cov-idx-${lambda_formatted}-log2-${log2}-nbins-${nbins}"
     output_file="${output_dir}/${date}-${job_name}.out"
     error_file="${output_dir}/${date}-${job_name}.err"
     sbatch << EOF
@@ -38,9 +39,10 @@ for lambda_idx in "${lambda_idxs[@]}"; do
 #SBATCH --mem=${mem_per_node}
 #SBATCH --cpus-per-task=${cpus_per_task}
 
-python -u 005.011.2025-02-18-SNR-diagonal-noise-dominated-CCAT-prime-specific.py ${lambda_idx}
+python -u 009.001.2025-02-19-bin-cov.py ${lambda_idx} ${log2} ${nbins}
+
 EOF
-    echo "Submitted job for Lambda idx = ${lambda_idx}"
+    echo ${job_name}
 done
 
 echo "All jobs submitted"
