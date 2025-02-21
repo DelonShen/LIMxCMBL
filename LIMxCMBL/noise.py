@@ -29,6 +29,7 @@ with open('008.008.eLOeLO_off_diag_mathematica.txt', 'r') as f:
 eLOeLO_off_diag_mathematica = eLOeLO_off_diag_mathematica.replace('\[Pi]', 'Pi')
 eLOeLO_off_diag_sympy = parse_mathematica(eLOeLO_off_diag_mathematica)
 
+
 #turn into mpmath function
 modules = [
         {
@@ -46,6 +47,13 @@ eLOeLO_off_diag_mpmath = lambdify(list(eLOeLO_off_diag_sympy.free_symbols),
 eLOeLO_diag_mpmath = lambdify(list(eLOeLO_diag_sympy.free_symbols), 
                              eLOeLO_diag_sympy, modules=modules)
 
+def f_eLOeLO(chi, chip, chimin, chimax, Lambda):
+    if(chi == chip):
+        return eLOeLO_diag_mpmath(a = chimin, b = chimax, L = Lambda,
+                                  x = chi)
+
+    return eLOeLO_off_diag_mpmath(a = chimin, b = chimax, L = Lambda,
+                                  x = chi, xp = chip)
 
 
 #turn into scipy function
@@ -60,8 +68,10 @@ def CosIntegral(x):
 
 modules = [
     {
-        'Ci': CosIntegral,
-        'Si': SinIntegral,
+#        'Ci': CosIntegral,
+#        'Si': SinIntegral,
+        'Ci': mpm.ci,
+        'Si': mpm.si,
         'Cos': np.cos,
         'Sin': np.sin,
         'Log': np.log,
@@ -73,6 +83,15 @@ eLOeLO_off_diag_numpy = lambdify(list(eLOeLO_off_diag_sympy.free_symbols),
                              eLOeLO_off_diag_sympy, modules=modules)
 eLOeLO_diag_numpy = lambdify(list(eLOeLO_diag_sympy.free_symbols), 
                              eLOeLO_diag_sympy, modules=modules)
+
+
+
+def f_eLOeLO_scipy(chi, chip, chimin, chimax, Lambda):
+    if(chi == chip):
+        return np.real(eLOeLO_diag_numpy(a = chimin, b = chimax, L = Lambda, x = chi))
+
+    return np.real(eLOeLO_off_diag_numpy(a = chimin, b = chimax, L = Lambda,
+                                  x = chi, xp = chip))
 
 
 
@@ -130,7 +149,7 @@ def f_eHIeHI(chimin, chimax, dchi, chis, Lambda):
     return results
 
 
-def f_eLOeLO(chimin, chimax, chis, Lambda):
+def f_eLOeLO_sample(chimin, chimax, chis, Lambda):
     n = len(chis)
     ret = [[0] * n for _ in range(n)]
     
