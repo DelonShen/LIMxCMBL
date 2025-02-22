@@ -49,11 +49,11 @@ eLOeLO_diag_mpmath = lambdify(list(eLOeLO_diag_sympy.free_symbols),
 
 def f_eLOeLO(chi, chip, chimin, chimax, Lambda):
     if(chi == chip):
-        return eLOeLO_diag_mpmath(a = chimin, b = chimax, L = Lambda,
-                                  x = chi)
+        return mpm.re(eLOeLO_diag_mpmath(a = chimin, b = chimax, L = Lambda,
+                                  x = chi))
 
-    return eLOeLO_off_diag_mpmath(a = chimin, b = chimax, L = Lambda,
-                                  x = chi, xp = chip)
+    return mpm.re(eLOeLO_off_diag_mpmath(a = chimin, b = chimax, L = Lambda,
+                                  x = chi, xp = chip))
 
 
 #turn into scipy function
