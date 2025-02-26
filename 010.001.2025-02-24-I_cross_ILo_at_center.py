@@ -5,6 +5,7 @@ import sys
 
 Lambda_idx = int(sys.argv[1])
 n_external = int(sys.argv[2])
+n_bins = n_external
 n_chibs = int(sys.argv[3])
 
 Lambda = Lambdas[Lambda_idx]
@@ -12,13 +13,16 @@ Lambda = Lambdas[Lambda_idx]
 zmin = 3.5
 zmax = 8.1
 
-oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/I_ILo_zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_ext_%d_n_chib_%d.npy'%(zmin, zmax, Lambda_idx, n_external, n_chibs)
+oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/I_ILo_zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_ext_%d_n_chib_%d_at_center.npy'%(zmin, zmax, Lambda_idx, n_external, n_chibs)
 print(oup_fname)
 
 Omega_field = 8 * (np.pi/180)**2 #rad^2
 Pei = 2.3e4 #Mpc^3 kJy^2 /sr^2 
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
+
+chi_bin_edges = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_bins + 1)
+chi_bin_centers = (chi_bin_edges[1:] + chi_bin_edges[:-1])/2
 
 # get CMB lensing component
 from LIMxCMBL.kernels import get_f_Kkappa
@@ -67,7 +71,7 @@ from tqdm import trange
 
 
 
-external_chis     =  np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_external)
+external_chis     =  chi_bin_centers
 print('external chi spacing', np.mean(np.diff(external_chis)))
 cross = np.zeros((100, n_external, n_external), dtype=np.float64)
 print('chib spacing', (chimax - chimin)/(2 * (n_chibs - 1)))
