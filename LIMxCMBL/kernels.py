@@ -21,7 +21,7 @@ def get_f_Kkappa():
 
 
 ##### LIM from SFR Table
-from scipy.integrate import simps 
+from scipy.integrate import simpson as simps 
 from scipy.interpolate import griddata 
 
 ### Code from SkyLine
