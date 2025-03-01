@@ -53,7 +53,7 @@ for chi_idx in trange(n_external):
     chi = external_chis[chi_idx]
     chip = external_chis
     
-    f_KLIMLo = get_f_KILo(external_chi = chip.reshape(n_external), Lambda=Lambda)
+    f_KLIMLo = get_f_KILo(external_chi = chip, Lambda=Lambda)
 
     f_KLIMLo_windowed = apply_window(f_K = f_KLIMLo,
                                      chimin = chimin,
@@ -70,8 +70,7 @@ for chi_idx in trange(n_external):
         return integrand
 
     ret, _ = quad_vec(f_integrand, (chimin + chi)/2, (chimax + chi)/2,
-            epsabs=0.0, epsrel=1e-3,
-                     workers = 1)
+            epsabs=0.0, epsrel=1e-3, workers = 32)
     cross[:,chi_idx,:] = ret
 
 cross = cross + np.moveaxis(cross, -1, -2) # the two cross terms are just from switching chi and chi'

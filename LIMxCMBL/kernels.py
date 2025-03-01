@@ -1,5 +1,6 @@
 from .init import *
 from scipy.interpolate import interp1d
+from functools import cache
 
 
 chis = np.linspace(0, chimax_sample, 10**4)
@@ -155,35 +156,50 @@ nu_CII = cu.c / (158*u.um)
 Hzbit = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_CII)
 
 KI = Dz*(bL_avg * Lz * Hzbit).to(u.kJy/u.sr)
+_KI = np.array(KI)
 
+f_KI = interp1d(chis, KI, bounds_error = False, fill_value=0)
+
+def f_KI1D(chi):
+    return np.interp(x = chi, xp = chis, fp = _KI, left = 0, right = 0)
+
+
+@cache
 def get_f_KI():
-    return interp1d(chis, KI, 
-                    bounds_error = False,
-                    fill_value='extrapolate')
+    return f_KI
 
-def apply_window(f_K, chimin, chimax):
+@cache 
+def get_window(chimin, chimax):
     _window = np.zeros_like(chis)
     _window[(chis > chimin) & (chis < chimax)] = 1
-    return lambda chi : f_K(chi) * interp1d(chis, _window, fill_value = 'extrapolate')(chi)
+    return interp1d(chis, _window, fill_value = 'extrapolate')
 
-def apply_window_tanh(f_K, chimin, chimax):
-    dchi = 100
-    _window = 0.5*(1 + np.tanh((chis - chimin)/dchi)) *0.5*(1 + np.tanh((chimax-chis)/dchi) )
-    return lambda chi : f_K(chi) * interp1d(chis, _window, fill_value = 'extrapolate')(chi)
+@cache
+def apply_window(f_K, chimin, chimax):
+    f_window = get_window(chimin, chimax)
+    return lambda chi : f_K(chi) * f_window(chi)
 
 
+# the extra factor of pi is to follow numpy's sinc convention
 
+
+import numba
+import math
+@numba.vectorize(['f8(f8)','f4(f4)'])
+def sinc(x):
+    if x == 0:
+        return 1.0
+    else:
+        return math.sin(x*math.pi) / (x*math.pi)
+
+def f_KILo(chi, external_chi, Lambda):
+    return (Lambda / np.pi * np.interp(x = chi, xp = chis, fp = _KI, left = 0, right = 0) * sinc(Lambda * (external_chi - chi) / np.pi))
+
+
+@cache
 def get_f_KILo(external_chi, Lambda):
     prefactor = Lambda / np.pi #units 1/cMpc
-    # the extra factor of pi is to follow numpy's sinc convention
-    return lambda chi : prefactor * get_f_KI()(chi) * np.sinc(Lambda * (external_chi - chi) / np.pi)
+    return lambda chi : prefactor * f_KI(chi) * np.sinc(Lambda * (external_chi - chi) / np.pi)
 
 def low_pass_sigma(Lambda):
     return Lambda / np.sqrt(2 * np.log(2))
-
-def get_f_KILo_Gaussian(external_chi, Lambda):
-    sigma = low_pass_sigma(Lambda)
-    prefactor = np.sqrt(2 * np.pi) * sigma
-    return interp1d(chis, prefactor*KI*np.exp(-sigma**2*(external_chi - chis)**2 / 2),
-                    bounds_error = False,
-                    fill_value='extrapolate')
