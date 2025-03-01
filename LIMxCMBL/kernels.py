@@ -1,6 +1,5 @@
 from .init import *
 from scipy.interpolate import interp1d
-from functools import cache
 
 
 chis = np.linspace(0, chimax_sample, 10**4)
@@ -165,17 +164,14 @@ def f_KI1D(chi):
     return np.interp(x = chi, xp = chis, fp = _KI, left = 0, right = 0)
 
 
-@cache
 def get_f_KI():
     return f_KI
 
-@cache 
 def get_window(chimin, chimax):
     _window = np.zeros_like(chis)
     _window[(chis > chimin) & (chis < chimax)] = 1
     return interp1d(chis, _window, fill_value = 'extrapolate')
 
-@cache
 def apply_window(f_K, chimin, chimax):
     f_window = get_window(chimin, chimax)
     return lambda chi : f_K(chi) * f_window(chi)
@@ -197,7 +193,6 @@ def f_KILo(chi, external_chi, Lambda):
     return (Lambda / np.pi * np.interp(x = chi, xp = chis, fp = _KI, left = 0, right = 0) * sinc(Lambda * (external_chi - chi) / np.pi))
 
 
-@cache
 def get_f_KILo(external_chi, Lambda):
     prefactor = Lambda / np.pi #units 1/cMpc
     return lambda chi : prefactor * f_KI(chi) * np.sinc(Lambda * (external_chi - chi) / np.pi)
