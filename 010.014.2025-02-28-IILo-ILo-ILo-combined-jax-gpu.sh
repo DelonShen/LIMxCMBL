@@ -10,7 +10,7 @@ readarray -t lambda_idxs <<< "$lambda_values"
 date=$(date +%Y-%m-%d)
 output_dir="logs"
 
-nex=1500
+nex=1000
 
 
 # Set the Slurm parameters

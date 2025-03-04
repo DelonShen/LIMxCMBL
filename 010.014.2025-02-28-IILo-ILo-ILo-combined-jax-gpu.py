@@ -71,7 +71,7 @@ def f_integrand(_chib, ell_idx):
     cross_integrand = (2 * jnp.interp(x = external_chis, xp = chis, fp = _KI, left = 0, right = 0) 
                        * interp2d(xq = _chib, yq=jnp.log(_delta), 
                            x = chibs, y = jnp.log(deltas), f=inner_dkparp_integral[ell_idx],
-                           method='cubic',) 
+                           method='linear',) 
                        / (_chib**2))
     
     cross_integrand = jnp.where(_idx.reshape(-1, 1),
@@ -106,7 +106,7 @@ def f_integrand(_chib, ell_idx):
     LoLo_integrand = jnp.einsum('xyd,d->xyd', LoLo_integrand, 
                                 interp1d(xq = _chib,
                                          x = chibs, f=inner_dkparp_integral[ell_idx],
-                                         method='cubic',))
+                                         method='linear',))
     
     LoLo_integrand = jnp.trapezoid(x = np.log(deltas), y = LoLo_integrand, axis=-1)
     return LoLo_integrand - cross_integrand
