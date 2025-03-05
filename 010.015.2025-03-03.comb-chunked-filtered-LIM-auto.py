@@ -1,3 +1,4 @@
+#subtly doesnt work for some reason, reuslting matrix not pos def. will resort to 010.014
 from LIMxCMBL.init import *
 from LIMxCMBL.kernels import *
 from tqdm import trange
@@ -5,6 +6,7 @@ import sys
 
 Lambda_idx = int(sys.argv[1])
 n_external = int(sys.argv[2])
+ell_idx = int(sys.argv[3])
 
 
 Lambda = Lambdas[Lambda_idx]
@@ -14,9 +16,10 @@ zmin = 3.5
 zmax = 8.1
 
 oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
-oup_fname+= 'zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_ext_%d_quad.npy'%(zmin, zmax, 
-                                                                   Lambda_idx, 
-                                                                   n_external)
+oup_fname+= 'zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_ext_%d_quad_li_%d.npy'%(zmin, zmax, 
+                                                                         Lambda_idx, 
+                                                                         n_external,
+                                                                         ell_idx)
 print(oup_fname)
 
 Omega_field = 8 * (np.pi/180)**2 #rad^2
@@ -36,7 +39,7 @@ for i in range(len(chibs)):
     for j in range(len(deltas)):
         tmp_chibs += [chibs[i]]
         tmp_log_deltas += [np.log10(deltas[j])]
-        tmp_fnctn += [inner_dkparp_integral[:,i,j]]
+        tmp_fnctn += [inner_dkparp_integral[ell_idx,i,j]]
         
 f_inner_integral = LinearNDInterpolator(list(zip(tmp_chibs, tmp_log_deltas)), tmp_fnctn)
 f_inner_integral_LoLo = interp1d(x = chibs, y = inner_dkparp_integral, axis = 1)
@@ -52,27 +55,20 @@ def f_KILo(chi, external_chi, Lambda):
             * jnp.sinc(Lambda * (external_chi - chi) / np.pi))
 
 from interpax import interp2d, interp1d
-inner_dkparp_integral = jnp.array(inner_dkparp_integral.astype(np.float64))
+inner_dkparp_integral = jnp.array(inner_dkparp_integral[ell_idx].astype(np.float64))
 
 from tqdm import trange
 
 
 chunk_size = 250
-_external_chis = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_external)
-print('external chi spacing', np.mean(np.diff(_external_chis)))
-dchi = np.mean(np.diff(_external_chis))
+external_chis = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_external)
+print('external chi spacing', np.mean(np.diff(external_chis)))
+dchi = np.mean(np.diff(external_chis))
 
 @jax.jit
 def f_integrand(_chib, 
-                ichunk,
-                jchunk,
-                ell_idx):
-    external_chis = jnp.linspace(chimin*(1+1e-8) + dchi * ichunk,
-                                chimin*(1+1e-8) + dchi * (ichunk + chunk_size),
-                                 chunk_size)
-    external_chips = jnp.linspace(chimin*(1+1e-8) + dchi * jchunk,
-                                chimin*(1+1e-8) + dchi * (jchunk + chunk_size),
-                                 chunk_size)
+                external_chis,
+                external_chips,):
 
     _delta = jnp.abs(1 - external_chis/_chib) #(n_ext)
     _delta = jnp.where(_delta < 1e-6, 1e-6, 
@@ -83,7 +79,7 @@ def f_integrand(_chib,
     
     cross_integrand = (2 * jnp.interp(x = external_chis, xp = chis, fp = _KI, left = 0, right = 0) 
                        * interp2d(xq = _chib, yq=jnp.log(_delta), 
-                           x = chibs, y = jnp.log(deltas), f=inner_dkparp_integral[ell_idx],
+                           x = chibs, y = jnp.log(deltas), f=inner_dkparp_integral,
                            method='linear',) 
                        / (_chib**2))
     
@@ -103,7 +99,7 @@ def f_integrand(_chib,
     
     cross_integrand2 = (2 * jnp.interp(x = external_chips, xp = chis, fp = _KI, left = 0, right = 0) 
                        * interp2d(xq = _chib, yq=jnp.log(_delta), 
-                           x = chibs, y = jnp.log(deltas), f=inner_dkparp_integral[ell_idx],
+                           x = chibs, y = jnp.log(deltas), f=inner_dkparp_integral,
                            method='linear',) 
                        / (_chib**2))
     
@@ -138,7 +134,7 @@ def f_integrand(_chib,
     LoLo_integrand = jnp.einsum('xyd,d->xyd', LoLo_integrand, deltas)
     LoLo_integrand = jnp.einsum('xyd,d->xyd', LoLo_integrand, 
                                 interp1d(xq = _chib,
-                                         x = chibs, f=inner_dkparp_integral[ell_idx],
+                                         x = chibs, f=inner_dkparp_integral,
                                          method='linear',))
     
     LoLo_integrand = jnp.trapezoid(x = np.log(deltas), y = LoLo_integrand, axis=-1)
@@ -147,24 +143,21 @@ def f_integrand(_chib,
 
 f_integrand(8080, 
             0,
-            0,
-            ell_idx = 0)
+            0,)
 
-oup = np.zeros((len(ells), n_external, n_external))
+oup = np.zeros((n_external, n_external))
 
 from quadax import quadgk
 
-for ell_idx in trange(len(ells)):
-    for ichunk in range(0, n_external, chunk_size):
-        for jchunk in range(ichunk, n_external, chunk_size):
-            res, _ = quadgk(f_integrand, jnp.hstack([10, jnp.linspace(chimin, chimax, 50), chimax_sample]),
-                             epsabs = 0.0, epsrel = 1e-5, 
-                            order = 61, max_ninter=10000, 
-                            args=(ichunk,
-                                  jchunk,
-                                  ell_idx,))
-            oup[ell_idx, ichunk:ichunk+chunk_size, jchunk:jchunk+chunk_size] = res
-            oup[ell_idx, jchunk:jchunk+chunk_size, ichunk:ichunk+chunk_size] = res.T
+for ichunk in trange(0, n_external, chunk_size):
+    for jchunk in range(0, n_external, chunk_size):
+        res, _ = quadgk(f_integrand, jnp.hstack([10, jnp.linspace(chimin, chimax, 50), chimax_sample]),
+                         epsabs = 0.0, epsrel = 1e-5, 
+                        order = 61, max_ninter=10000, 
+                        args=(external_chis[ichunk:ichunk+chunk_size],
+                              external_chis[jchunk:jchunk+chunk_size],))
+        oup[ichunk:ichunk+chunk_size, jchunk:jchunk+chunk_size] = res
+#        oup[jchunk:jchunk+chunk_size, ichunk:ichunk+chunk_size] = res.T
 
-np.save(oup_fname, res)
+np.save(oup_fname, oup)
 print('outputted')

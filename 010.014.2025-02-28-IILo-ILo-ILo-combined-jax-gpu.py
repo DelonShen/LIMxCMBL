@@ -121,6 +121,6 @@ from quadax import quadcc, quadgk
 for ell_idx in trange(len(ells)):
     oup[ell_idx], _ = quadgk(f_integrand, jnp.hstack([10, jnp.linspace(chimin, chimax, 50), chimax_sample]),
                              epsabs = 0.0, epsrel = 1e-5, 
-                             order = 15, max_ninter=300, args=(ell_idx,))
+                             order = 31, max_ninter=1000, args=(ell_idx,))
 np.save(oup_fname, oup)
 print('outputted')

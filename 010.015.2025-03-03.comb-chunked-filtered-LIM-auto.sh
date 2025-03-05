@@ -2,6 +2,7 @@
 lambda_values=$(python3 -c '
 import numpy as np
 lambda_idxs = np.arange(25)[::-1]
+lambda_idxs = [24]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
@@ -15,7 +16,7 @@ nex=3000
 
 # Set the Slurm parameters
 partition="owners"
-time_limit="24:00:00"
+time_limit="30:00"
 num_nodes=1
 mem_per_node="64G"
 cpus_per_task=1
@@ -26,10 +27,11 @@ mkdir -p ${output_dir}
 date=$(date +%Y-%m-%d)
 
 for lambda_idx in "${lambda_idxs[@]}"; do
+  for ell_idx in $(seq 0 99); do
     echo $lambda_idx
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="010.015-${lambda_formatted}-n_ext-${nex}-jax"
+    job_name="010.015-${lambda_formatted}-n_ext-${nex}-l-${ell_idx}-jax"
     output_file="${output_dir}/${date}-${job_name}.out"
     error_file="${output_dir}/${date}-${job_name}.err"
 
@@ -47,10 +49,11 @@ for lambda_idx in "${lambda_idxs[@]}"; do
 #SBATCH -C GPU_MEM:48GB
 
 
-python -u 010.015.2025-03-03.comb-chunked-filtered-LIM-auto.py ${lambda_idx} ${nex}
+python -u 010.015.2025-03-03.comb-chunked-filtered-LIM-auto.py ${lambda_idx} ${nex} ${ell_idx}
 
 EOF
     echo ${job_name}
+  done
 done
 
 echo "All jobs submitted"
