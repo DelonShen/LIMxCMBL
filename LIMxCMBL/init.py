@@ -28,4 +28,4 @@ chibs = np.linspace(10, chimax_sample, 2**8)
 deltas = np.logspace(-6, np.log10(1-eps), 2**7)
 
 
-Lambdas = np.logspace(-5, -1, 25)
+Lambdas = np.logspace(-5, 0, 31)
