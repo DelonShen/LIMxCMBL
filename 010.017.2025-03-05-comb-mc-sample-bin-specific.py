@@ -17,6 +17,11 @@ Lambda = Lambdas[Lambda_idx]
 zmin = 3.5
 zmax = 8.1
 
+if(len(sys.argv) > 6):
+    zmin = float(sys.argv[6])
+    zmax = float(sys.argv[7])
+
+
 oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
 oup_fname +='zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_bins_%d_mc_%d_quad_%d_%d.npy'%(zmin, zmax, 
                                                                                       Lambda_idx, 
