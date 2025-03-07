@@ -1,7 +1,7 @@
 #!/bin/bash
 lambda_values=$(python3 -c '
 import numpy as np
-lambda_idxs = np.arange(31)[25:][::-1]
+lambda_idxs = np.arange(25)[::-1]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
@@ -29,7 +29,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
     echo $lambda_idx
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="comb-mpmath-quad-cov-idx-${lambda_formatted}-nbins-${nbins}"
+    job_name="comb-mpmath-AtLAST-quad-cov-idx-${lambda_formatted}-nbins-${nbins}"
     output_file="${output_dir}/${date}-${job_name}.out"
     error_file="${output_dir}/${date}-${job_name}.err"
 

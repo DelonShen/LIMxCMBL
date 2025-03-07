@@ -1,37 +1,31 @@
 #!/bin/bash
 lambda_values=$(python3 -c '
 import numpy as np
-lambda_idxs = np.arange(25)[::-1]
+lambda_idxs = np.arange(25)[15:][::-1]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
 readarray -t lambda_idxs <<< "$lambda_values"
 
+nb=100
+nmc=30
+
 date=$(date +%Y-%m-%d)
-output_dir="logs"
-
-nex=1500
-
 
 # Set the Slurm parameters
 partition="owners"
-time_limit="3:00:00"
+time_limit="10:00:00"
 num_nodes=1
 mem_per_node="64G"
 cpus_per_task=1
-output_dir="logs"
 
-mkdir -p ${output_dir}
-
-date=$(date +%Y-%m-%d)
-
-for lambda_idx in "${lambda_idxs[@]}"; do
-    echo $lambda_idx
+for bidx in $(seq 0 4 99); do
+  for lambda_idx in "${lambda_idxs[@]}"; do
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="010.014-${lambda_formatted}-n_ext-${nex}-jax"
-    output_file="${output_dir}/${date}-${job_name}.out"
-    error_file="${output_dir}/${date}-${job_name}.err"
+    job_name="010.017-${lambda_formatted}-nb-${nb}-b1idx-${bidx}-nmc-${nmc}"
+    output_file="logs/${date}-${job_name}.out"
+    error_file="logs/${date}-${job_name}.err"
 
     sbatch << EOF
 #!/bin/bash
@@ -46,11 +40,15 @@ for lambda_idx in "${lambda_idxs[@]}"; do
 #SBATCH -G 1
 #SBATCH -C GPU_MEM:48GB
 
-
-python -u 010.014.2025-02-28-IILo-ILo-ILo-combined-jax-gpu.py ${lambda_idx} ${nex}
+for a in \$(seq ${bidx} $((bidx+3))); do
+  for b in \$(seq \${a} 99); do
+    python -u 010.017.2025-03-05-comb-mc-sample-bin-specific.py ${lambda_idx} ${nb} ${nmc} \${a} \${b}
+  done
+done
 
 EOF
     echo ${job_name}
+  done
 done
 
 echo "All jobs submitted"

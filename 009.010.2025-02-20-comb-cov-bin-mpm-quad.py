@@ -7,12 +7,9 @@ nbins = int(sys.argv[2])
 
 Lambda = Lambdas[Lambda_idx]
 
-# CCAT-prime
-zmin = 3.5
-zmax = 8.1
+zmin = 1
+zmax = 5
 
-Omega_field = 8 * (np.pi/180)**2 #rad^2
-Pei = 2.3e4 #Mpc^3 kJy^2 /sr^2 
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
 

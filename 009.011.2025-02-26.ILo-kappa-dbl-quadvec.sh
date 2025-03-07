@@ -1,7 +1,8 @@
 #!/bin/bash
 lambda_values=$(python3 -c '
 import numpy as np
-lambda_idxs = np.arange(31)[25:][::-1]
+lambda_idxs = np.arange(25)[::-1]
+lambda_idxs = [24]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
