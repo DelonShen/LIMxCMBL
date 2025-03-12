@@ -197,5 +197,26 @@ def get_f_KILo(external_chi, Lambda):
     prefactor = Lambda / np.pi #units 1/cMpc
     return lambda chi : prefactor * f_KI(chi) * np.sinc(Lambda * (external_chi - chi) / np.pi)
 
-def low_pass_sigma(Lambda):
-    return Lambda / np.sqrt(2 * np.log(2))
+#Ms is Msun/h
+#Dongwoo 2111.05931
+logC = 10.63
+AC0 = -2.85
+BC0 = -0.42
+logMpMsun = 12.3
+MpMsun = (logMpMsun)**10
+MpMsunph = MpMsun * h
+
+pseudo_LC0 = (logC)**10/((Ms / MpMsunph)**AC0 + (Ms / MpMsunph)**BC0)
+
+#focus on J=1->0
+LCO = 4.9e-5 * pseudo_LC0 * u.Lsun
+CO_integrand_bias = np.einsum('zm, m, zm -> zm', nmvec, LCO, bvec)
+integrand_LCO = np.einsum('zm, m ->zm', nmvec, LCO)
+L_COz = simps(integrand_LCO, np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
+bL_CO_avg = simps(CO_integrand_bias, np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_COz
+
+
+nu_CO = 1.1527e11 * u.Hz
+Hzbit_CO = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_CO)
+
+KI_CO = Dz*(L_COz * bL_CO_avg * Hzbit_CO).to(u.kJy/u.sr)
