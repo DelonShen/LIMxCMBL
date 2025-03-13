@@ -1,5 +1,15 @@
 from LIMxCMBL.init import *
 from LIMxCMBL.kernels import *
+
+
+#CII
+#_KI = np.array(KI)
+
+#CO
+print('CO')
+_KI = np.array(KI_CO)
+
+
 import sys
 
 Lambda_idx = int(sys.argv[1])
@@ -48,7 +58,6 @@ f_inner_integral_LoLo = interp1d(x = chibs, y = inner_dkparp_integral, axis = 1)
 
 import jax
 import jax.numpy as jnp
-_KI = np.array(KI)
 @jax.jit
 def f_KILo(chi, external_chi, Lambda):
     return (Lambda / jnp.pi 

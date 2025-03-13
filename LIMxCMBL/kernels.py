@@ -203,10 +203,10 @@ logC = 10.63
 AC0 = -2.85
 BC0 = -0.42
 logMpMsun = 12.3
-MpMsun = (logMpMsun)**10
+MpMsun = 10**(logMpMsun)
 MpMsunph = MpMsun * h
 
-pseudo_LC0 = (logC)**10/((Ms / MpMsunph)**AC0 + (Ms / MpMsunph)**BC0)
+pseudo_LC0 = 10**logC/((Ms / MpMsunph)**AC0 + (Ms / MpMsunph)**BC0)
 
 #focus on J=1->0
 LCO = 4.9e-5 * pseudo_LC0 * u.Lsun

@@ -5,9 +5,9 @@ lambda_idxs = np.arange(25)[12:][::-1]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
-zmin=1
-zmax=5
-next=1501
+zmin=2.4
+zmax=3.4
+next=1201
 
 readarray -t lambda_idxs <<< "$lambda_values"
 

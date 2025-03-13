@@ -10,12 +10,12 @@ Once the inner integral is tabulate we can compute relevant spectra:
 - **CMB lensing spectrum** computation can be found in `001.*`
 - **Unfiltered LIM x CMB lensing cross spectrum** [`[CII]`](009.013.2025-03-04-Ik-quad-external.ipynb)[`[CO]`](009.015.2025-03-11-Ik-quad-external-CO.ipynb)
 - **Unfiltered LIM spectrum** [`[CII]`](010.000.2025-02-24.LIM_auto.ipynb)[`[CO]`](010.000.2025-03-11.LIM_auto_CO.ipynb)
-- **Low-passed LIM x CMB lensing cross spectrum** [`009.011.2025-02-26.ILo-kappa-dbl-quadvec.py`](009.011.2025-02-26.ILo-kappa-dbl-quadvec.py)
+- **Low-passed LIM x CMB lensing cross spectrum** [`[CII]`](009.011.2025-02-26.ILo-kappa-dbl-quadvec.py)[`[CO]`](009.011.2025-03-11.ILo-kappa-dbl-quadvec-CO.py)
 - **Low-passed LIM spectrum** [`010.018.2025-03-10-try-comb-again.py`](010.018.2025-03-10-try-comb-again.py)
 - **Filtered LIM noise spectrum** [`009.010.2025-02-20-comb-cov-bin-mpm-quad.py`](009.010.2025-02-20-comb-cov-bin-mpm-quad.py)
+    - Values of white noise amplitude computed in [`012.000.2025-03-12-various-line-white-noise-spectra.ipynb`](012.000.2025-03-12-various-line-white-noise-spectra.ipynb)
 
 The noise spectra for CMB lensing, store in `LIMxCMBL/N0.npy`, is assumed to be only $N^{(0)}$ which we tabulate from [LensQuEst](https://github.com/DelonShen/LensQuEst) for a SO-like survey. 
 
 SNR computed in 
 - **CCAT-Prime**: TODO
-- **AtLAST**: TODO
