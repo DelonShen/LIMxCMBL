@@ -52,7 +52,6 @@ def SFR_Mz_2dinterp(Mvals,zvals):
     del mzxx, mzyy
     # grid = np.array([logM, z]) 
 
-    
     logSFR_interp = griddata(ingrid.T, inval, mzgrid.T, fill_value=-40.)
 
     
@@ -197,7 +196,6 @@ def get_f_KILo(external_chi, Lambda):
     prefactor = Lambda / np.pi #units 1/cMpc
     return lambda chi : prefactor * f_KI(chi) * np.sinc(Lambda * (external_chi - chi) / np.pi)
 
-#Ms is Msun/h
 #Dongwoo 2111.05931
 logC = 10.63
 AC0 = -2.85
@@ -220,3 +218,22 @@ nu_CO = 1.1527e11 * u.Hz
 Hzbit_CO = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_CO)
 
 KI_CO = Dz*(L_COz * bL_CO_avg * Hzbit_CO).to(u.kJy/u.sr)
+
+#LyAlpha
+#basically 2212.08056 which follows 1809.04550 
+f_esc = np.einsum('z, zm->zm',
+                  1/np.sqrt(1 + np.exp(-1.6*zs + 5)),
+                  (0.18 + 0.82/(1 + 0.8 * sfrgrid**0.875))**2)
+L_Lya = 1.6e42 * f_esc * sfrgrid * u.erg / u.s
+L_Lya = L_Lya.to(u.Lsun)
+
+LYa_integrand_bias = np.einsum('zm, zm, zm -> zm', nmvec, L_Lya, bvec)
+integrand_LYa = np.einsum('zm, zm ->zm', nmvec, L_Lya)
+
+L_Lya_z = simps(integrand_LYa, np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
+bL_Lya_avg = simps(LYa_integrand_bias, np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_Lya_z
+
+
+nu_Lya = cu.c/(121.6 * u.nm)
+Hzbit_Lya = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_Lya)
+KI_Lya = Dz*(L_Lya_z * bL_Lya_avg * Hzbit_Lya).to(u.kJy/u.sr)

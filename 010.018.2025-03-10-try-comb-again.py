@@ -6,8 +6,13 @@ from LIMxCMBL.kernels import *
 #_KI = np.array(KI)
 
 #CO
-print('CO')
-_KI = np.array(KI_CO)
+#print('CO')
+#_KI = np.array(KI_CO)
+
+#Lya
+print('Lya')
+_KI = np.array(KI_Lya)
+
 
 
 import sys

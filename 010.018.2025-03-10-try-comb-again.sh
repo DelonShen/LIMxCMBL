@@ -1,12 +1,12 @@
 #!/bin/bash
 lambda_values=$(python3 -c '
 import numpy as np
-lambda_idxs = np.arange(25)[12:][::-1]
+lambda_idxs = np.arange(25)[16:][::-1]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
-zmin=2.4
-zmax=3.4
+zmin=5
+zmax=8
 next=1201
 
 readarray -t lambda_idxs <<< "$lambda_values"
