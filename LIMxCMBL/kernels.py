@@ -144,10 +144,10 @@ integrand_bias = np.einsum('zm, zm, zm -> zm', nmvec, Lgrid, bvec)
 
 
 
-Lz = simps(integrand_L, np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
+Lz = simps(y=integrand_L, x=np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
 
 
-bL_avg = simps(integrand_bias, np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ Lz
+bL_avg = simps(y=integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ Lz
 
 
 nu_CII = cu.c / (158*u.um)
@@ -210,8 +210,8 @@ pseudo_LC0 = 10**logC/((Ms / MpMsunph)**AC0 + (Ms / MpMsunph)**BC0)
 LCO = 4.9e-5 * pseudo_LC0 * u.Lsun
 CO_integrand_bias = np.einsum('zm, m, zm -> zm', nmvec, LCO, bvec)
 integrand_LCO = np.einsum('zm, m ->zm', nmvec, LCO)
-L_COz = simps(integrand_LCO, np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
-bL_CO_avg = simps(CO_integrand_bias, np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_COz
+L_COz = simps(y=integrand_LCO, x=np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
+bL_CO_avg = simps(y=CO_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_COz
 
 
 nu_CO = 1.1527e11 * u.Hz
@@ -230,10 +230,55 @@ L_Lya = L_Lya.to(u.Lsun)
 LYa_integrand_bias = np.einsum('zm, zm, zm -> zm', nmvec, L_Lya, bvec)
 integrand_LYa = np.einsum('zm, zm ->zm', nmvec, L_Lya)
 
-L_Lya_z = simps(integrand_LYa, np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
-bL_Lya_avg = simps(LYa_integrand_bias, np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_Lya_z
+L_Lya_z = simps(y=integrand_LYa, x=np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
+bL_Lya_avg = simps(y=LYa_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_Lya_z
 
 
 nu_Lya = cu.c/(121.6 * u.nm)
 Hzbit_Lya = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_Lya)
 KI_Lya = Dz*(L_Lya_z * bL_Lya_avg * Hzbit_Lya).to(u.kJy/u.sr)
+
+
+#HI
+#2212.08056 which follows 1405.1452, 1804.09180
+
+##from Table 1 FOF of 1804.09180
+_M0s = np.array([4.3e10, 1.5e10, 1.3e10, 2.9e9, 1.4e9, 1.9e9]) #Msol / h
+_M0s /= h #Msol
+f_M0 = interp1d(x=[0,1,2,3,4,5], y = _M0s, bounds_error = False)
+
+_Mms = np.array([2e12, 6e11, 3.6e11, 6.7e10, 2.1e10, 2e10]) #Msol / h
+_Mms /= h #Msol
+f_Mm = interp1d(x=[0,1,2,3,4,5], y = _Mms, bounds_error = False)
+
+_alphaMs = np.array([0.24, 0.53, 0.6, 0.76, 0.79, 0.74])
+f_alphaM = interp1d(x=[0,1,2,3,4,5], y = _alphaMs, bounds_error = False)
+
+
+betaM = 0.35
+_tmp_zs = zs.reshape(-1, 1)
+_tmp_Ms = Ms.reshape(1, -1)
+MHI = np.where(_tmp_zs <= 5,
+               f_M0(_tmp_zs)
+               * (_tmp_Ms / f_Mm(_tmp_zs)) ** (f_alphaM(_tmp_zs))
+               * np.exp(-(f_Mm(_tmp_zs) / _tmp_Ms)**betaM),
+               0) * u.Msun
+
+A10=2.869e-15*u.s**(-1) #spontaneous emission coefficient
+nu_HI = cu.c / (21 * u.cm)
+HI_coeff=((3/4)*A10*cu.h*nu_HI/cu.m_p).to(u.Lsun/u.Msun)
+L_HI = (HI_coeff * MHI).to(u.Lsun)
+
+HI_integrand_bias = np.einsum('zm, zm, zm -> zm', nmvec, L_HI, bvec)
+integrand_HI = np.einsum('zm, zm ->zm', nmvec, L_HI)
+
+L_HI_z = simps(y=integrand_HI, x=np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
+#bL_HI_avg = simps(y=HI_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_HI_z
+
+
+Hzbit_HI = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_HI)
+KI_HI = Dz*(simps(y=HI_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)
+            * Hzbit_HI).to(u.kJy/u.sr)
+
+
+

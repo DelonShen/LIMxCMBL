@@ -3,15 +3,15 @@ from LIMxCMBL.noise import *
 
 import sys
 
-print('SPHEREx')
 Lambda_idx = int(sys.argv[1])
 nbins = int(sys.argv[2])
 curr_bin = int(sys.argv[3])
 
 Lambda = Lambdas[Lambda_idx]
 
-zmin = 5
-zmax = 8
+print('HETDEX')
+zmin = 1.9
+zmax = 3.5
 
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))

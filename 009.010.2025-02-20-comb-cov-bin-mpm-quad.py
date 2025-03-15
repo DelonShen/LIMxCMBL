@@ -7,8 +7,8 @@ nbins = int(sys.argv[2])
 
 Lambda = Lambdas[Lambda_idx]
 
-zmin = 5
-zmax = 8
+zmin = float(sys.argv[3])
+zmax = float(sys.argv[4])
 
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))

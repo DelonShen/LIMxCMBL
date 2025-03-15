@@ -30,7 +30,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
     for curr in $(seq 0 $((${nb} - 1))); do
       lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
       
-      job_name="ILo-kappa-SPHEREx-${lambda_formatted}-nb-${nb}-${curr}-dblquad"
+      job_name="009.011-HETDEX-${lambda_formatted}-nb-${nb}-${curr}-dblquad"
       output_file="${output_dir}/${date}-${job_name}.out"
       error_file="${output_dir}/${date}-${job_name}.err"
 

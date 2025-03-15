@@ -1,21 +1,23 @@
 from LIMxCMBL.init import *
 from LIMxCMBL.kernels import *
 
+from scipy.interpolate import interp1d, LinearNDInterpolator
+from scipy.integrate import quad, quad_vec, trapezoid
 
-#CII
-#_KI = np.array(KI)
+import jax
+import jax.numpy as jnp
 
-#CO
-#print('CO')
-#_KI = np.array(KI_CO)
-
-#Lya
-print('Lya')
-_KI = np.array(KI_Lya)
-
-
+from interpax import interp2d, interp1d
+from quadax import quadcc, quadgk
 
 import sys
+from os.path import isfile
+
+from jax import config
+config.update("jax_enable_x64", True)
+
+
+
 
 Lambda_idx = int(sys.argv[1])
 n_external = int(sys.argv[2])
@@ -27,42 +29,40 @@ Lambda = Lambdas[Lambda_idx]
 zmin = float(sys.argv[4])
 zmax = float(sys.argv[5])
 
+kernels = {}
+kernels['CII'] = np.array(KI)
+kernels['CO'] = np.array(KI_CO)
+kernels['Lya'] = np.array(KI_Lya)
+kernels['HI'] = np.array(KI_HI)
+
+
+line_str = sys.argv[6]
+print(line_str)
+_KI = kernels[line_str]
+
 oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
-oup_fname += 'zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_ext_%d_l_%d_jax_quad.npy'%(zmin, zmax, 
-                                                                             Lambda_idx, 
-                                                                             n_external,
-                                                                             ell_idx)
-from os.path import isfile
-if(isfile(oup_fname)):
-    print('already computed')
-    assert(1==0)
+oup_fname += '%s_zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_ext_%d_l_%d_jax_quad.npy'%(line_str,
+                                                                                zmin, zmax, 
+                                                                                Lambda_idx, 
+                                                                                n_external,
+                                                                                ell_idx)
+
+
+#if(isfile(oup_fname)):
+#    print('already computed')
+#    assert(1==0)
 
 print(oup_fname)
 
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
 
-from scipy.interpolate import interp1d, LinearNDInterpolator
-from scipy.integrate import quad, quad_vec, trapezoid
 
 external_chis = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_external)
 print('external chi spacing', np.mean(np.diff(external_chis)))
 
 inner_dkparp_integral = np.load('/oak/stanford/orgs/kipac/users/delon/LIMxCMBL/inner_dkparp_integral.npy')
-tmp_chibs = []
-tmp_log_deltas = []
-tmp_fnctn = []
-for i in range(len(chibs)):
-    for j in range(len(deltas)):
-        tmp_chibs += [chibs[i]]
-        tmp_log_deltas += [np.log10(deltas[j])]
-        tmp_fnctn += [inner_dkparp_integral[:,i,j]]
-        
-f_inner_integral = LinearNDInterpolator(list(zip(tmp_chibs, tmp_log_deltas)), tmp_fnctn)
-f_inner_integral_LoLo = interp1d(x = chibs, y = inner_dkparp_integral, axis = 1)
-
-import jax
-import jax.numpy as jnp
+       
 @jax.jit
 def f_KILo(chi, external_chi, Lambda):
     return (Lambda / jnp.pi 
@@ -70,10 +70,7 @@ def f_KILo(chi, external_chi, Lambda):
                          fp = _KI, left = 0, right = 0) 
             * jnp.sinc(Lambda * (external_chi - chi) / np.pi))
 
-from interpax import interp2d, interp1d
 inner_dkparp_integral = jnp.array(inner_dkparp_integral.astype(np.float64))
-
-from tqdm import trange
 
 @jax.jit
 def f_integrand(_chib, ell_idx):
@@ -132,14 +129,11 @@ def f_integrand(_chib, ell_idx):
 
 f_integrand((chimin + chimax)/2, ell_idx = ell_idx)
 
-from tqdm import trange
-from quadax import quadcc, quadgk
-
 res, tmp = quadgk(f_integrand, jnp.hstack([10, 
-                                           jnp.linspace(chimin, chimax, 900), 
+                                           jnp.linspace(chimin, chimax, 500), 
                                            chimax_sample]),
                   epsabs = 0.0, epsrel = 1e-5, 
-                  order = 31, max_ninter=1000, args=(ell_idx,),
+                  order = 31, max_ninter=600, args=(ell_idx,),
                   full_output = True)
 
 np.save(oup_fname, res)

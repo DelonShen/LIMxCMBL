@@ -6,6 +6,8 @@ print("\n".join(map(str, lambda_idxs)))
 ')
 
 nbins=100
+zmin=1.9
+zmax=3.5
 readarray -t lambda_idxs <<< "$lambda_values"
 
 date=$(date +%Y-%m-%d)
@@ -29,7 +31,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
     echo $lambda_idx
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="009.010-comb-mpmath-SPHEREx-quad-cov-idx-${lambda_formatted}-nbins-${nbins}"
+    job_name="009.010-${zmin}-${zmax}-${lambda_formatted}-nbins-${nbins}"
     output_file="${output_dir}/${date}-${job_name}.out"
     error_file="${output_dir}/${date}-${job_name}.err"
 
@@ -51,7 +53,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
 #SBATCH --mem=${mem_per_node}
 #SBATCH --cpus-per-task=${cpus_per_task}
 
-python -u 009.010.2025-02-20-comb-cov-bin-mpm-quad.py ${lambda_idx} ${nbins}
+python -u 009.010.2025-02-20-comb-cov-bin-mpm-quad.py ${lambda_idx} ${nbins} ${zmin} ${zmax}
 
 EOF
     echo ${job_name}

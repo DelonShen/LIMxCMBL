@@ -62,3 +62,38 @@ def COMAP_Pei():
 
     return ((sigmaIPixel**2 * voxelComovingVolume(zmin, Omegapix, R=R)).to(u.kJy**2 / u.sr**2 * u.Mpc**3),
             (sigmaIPixel**2 * voxelComovingVolume(zmax, Omegapix, R=R)).to(u.kJy**2 / u.sr**2 * u.Mpc**3))
+
+def SPHEREx_Pei():
+    #1412.4872
+    #2103.01971
+    zmin = 5
+    zmax = 8.2
+    idxs = np.where((zs < zmax) & (zs>zmin))[0]
+    R = 150
+    Omegapix = (6*u.arcsec)**2
+    Omegasurv = 2 * 100 * u.deg**2
+    # borrowed from LIM branch of github/EmmanuelSchaan/HaloGen
+    # Inferred from SPHEREx science book
+    mAB5Sigma = 22 # 5sigma lim mag for point source (Cheng+18)
+    f5Sigma = 10.**((8.9-mAB5Sigma)/2.5) * u.Jy   # 5sigma lim point source flux [Jy]
+    sigmaFSource = f5Sigma / 5. # 1sigma lim point source flux [Jy]
+    
+    # This point source flux is the output of a spatial matched filter
+    # for one frequency element.
+    # It needs to be converted to pixel flux.
+    # The SPHEREx doc, fig 9, gives the conversion using 
+    # the effective number of pixels covered by the PSF
+    nPixEff = 3.   # 2-5 in fig 9 of SPHEREx doc
+    
+    sigmaFPixel = sigmaFSource / np.sqrt(nPixEff)
+    sigmaIPixel = sigmaFPixel / Omegapix 
+    
+    # convert from pixel variance
+    # to white noise power spectrum
+    worst = sigmaIPixel**2 * voxelComovingVolume(zmax, Omegapix, R=R)
+    worst = worst.to((u.kJy/u.sr)**2 * u.Mpc**3)
+
+    best = sigmaIPixel**2 * voxelComovingVolume(zmin, Omegapix, R=R)
+    best = best.to((u.kJy/u.sr)**2 * u.Mpc**3)
+
+    return worst, best
