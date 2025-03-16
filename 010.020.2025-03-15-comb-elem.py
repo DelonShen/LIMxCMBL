@@ -68,31 +68,41 @@ def f_KILo(chi, external_chi, Lambda):
 
 inner_dkparp_integral = jnp.array(inner_dkparp_integral.astype(np.float64))
 
+
 @jax.jit
-def f_integrand(_chib, ell_idx):
-    #by construction chimin < exteranl_chis < chimax 
-    #I Lo + Lo I
-    
-    _delta = jnp.abs(1 - external_chis/_chib) #(n_ext)
+def f_aux(_chib, chi, chip):
+    _delta = jnp.abs(1 - chi/_chib)
     _delta = jnp.where(_delta < 1e-6, 1e-6, 
                      jnp.where(_delta > 0.7, 0.7, _delta))
-    
-    _idx = ((chimin <= 2*_chib - external_chis) 
-            & (2*_chib - external_chis <= chimax)) #(n_ext)
-    
-    cross_integrand = (2 * jnp.interp(x = external_chis, xp = chis, fp = _KI, left = 0, right = 0) 
+
+    cross_integrand_1 = (2 * jnp.interp(x = chi, xp = chis, fp = _KI, left = 0, right = 0) 
                        * interp2d(xq = _chib, yq=jnp.log(_delta), 
                            x = chibs, y = jnp.log(deltas), f=inner_dkparp_integral[ell_idx],
                            method='linear',) 
                        / (_chib**2))
-    
-    cross_integrand = jnp.where(_idx.reshape(-1, 1),
-                               cross_integrand.reshape(-1, 1)
-                               * f_KILo(2*_chib - external_chis.reshape(-1,1), 
-                                        external_chi = external_chis.reshape(1, -1), 
-                                        Lambda=Lambda),
-                                0)
-    cross_integrand = cross_integrand + jnp.moveaxis(cross_integrand, -1, -2) # the two cross terms are just from switching chi and chi'
+
+    cross_integrand_1 *= f_KILo(2*_chib - chi, 
+                                        external_chi = chip,
+                                        Lambda=Lambda)
+    return cross_integrand_1
+@jax.jit
+def f_integrand(_chib, chi_idx, chip_idx, ell_idx):
+    #by construction chimin < exteranl_chis < chimax 
+    #I Lo + Lo I
+    chi = external_chis[chi_idx]
+    chip = external_chis[chip_idx]
+
+
+    cross_integrand_1 = jnp.where((chimin <= 2*_chib - chi) & (2*_chib - chi <= chimax),
+                                  f_aux(_chib, chi, chip),
+                                  0)
+            
+    cross_integrand_2 = jnp.where((chimin <= 2*_chib - chip) & (2*_chib - chip <= chimax),
+                                  f_aux(_chib, chip, chi),
+                                  0)
+            
+    cross_integrand = cross_integrand_1 + cross_integrand_2
+
     #LoLo
     plus = _chib*(1+deltas)
     mins = _chib*(1-deltas)
@@ -125,13 +135,21 @@ def f_integrand(_chib, ell_idx):
 
 f_integrand((chimin + chimax)/2, ell_idx = ell_idx)
 
-res, tmp = quadcc(f_integrand, jnp.hstack([10, 
+from tqdm import trange
+
+oup = np.zeros((n_external, n_external))
+
+for chi_idx in range(n_external):
+    for chip_idx in trange(n_external):
+        res, tmp = quadcc(f_integrand, jnp.hstack([10, 
                                            jnp.linspace(chimin, chimax, 100), 
                                            chimax_sample]),
                   epsabs = 0.0, epsrel = 1.4e-8, 
-                  order = 32, max_ninter=650, args=(ell_idx,),
+                  order = 256, max_ninter=650, args=(58, 59, ell_idx,),
                   full_output = True)
+        oup[chi_idx,chip_idx] = oup[chip_idx, chi_idx] = res
+        print('intervals used', tmp[3]['ninter'])
+        assert(tmp[3]['ninter']< 650)
 
-print('intervals used', tmp[3]['ninter'])
-np.save(oup_fname, res)
+np.save(oup_fname, oup)
 print('outputted')
