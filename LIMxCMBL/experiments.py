@@ -97,3 +97,45 @@ def SPHEREx_Pei():
     best = best.to((u.kJy/u.sr)**2 * u.Mpc**3)
 
     return worst, best
+
+def HETDEX_Pei():
+    #again borrowing from Manu, LIM branch of Halogen
+    zmin = 1.9
+    zmax = 3.5
+
+    R = 800
+    Omegapix = (3*u.arcsec)**2
+    Omegasurv = 300 * u.deg**2
+
+    def _HETDEX_Pei(z):
+        # focus on Lyman-alpha
+        nuHz = nu_Lya / (1.+z) # convert from rest to observed freq
+        # flux noise from Hill+08, Cheng+18 (similar to Hill+16)
+        # they quote the 5-sigma uncertainty --> divide by 5
+        sigmaFPixel = 5.5e-17 / 5.  * u.erg / u.s / u.cm**2
+        # convert from flux to intensity
+        sigmaIPixel = sigmaFPixel / Omegapix * R/nuHz   # [erg/s/cm^2/sr/Hz]
+        print(sigmaIPixel.to(u.Jy/u.sr))
+        # convert to noise power spectrum
+        result = sigmaIPixel**2 * voxelComovingVolume(z, Omegapix, R=R)
+        return result.to(u.Mpc**3 * (u.kJy/u.sr)**2)
+    return _HETDEX_Pei(zmax), _HETDEX_Pei(zmin)
+
+def CHIME_Pei():
+    zmin = 1.
+    zmax = 1.3
+    #from 2201.07869 App. A.3
+    R = ((nu_HI/(1+(zmin + zmax)/2))/(390 * u.kHz)).to(u.dimensionless_unscaled)
+    Omegapix = (40*u.arcmin)**2
+    Omegasurv = 31000 * u.deg**2
+
+    #1809.06384
+    #0910.5007
+    #2201.07869 App. A.3
+    sigmaT = 2.9e-4 * u.K
+    sigmaIPixel = (2. * (nu_HI/(1+zmin))**2 * cu.k_B
+                   * sigmaT # [K]
+                   / cu.c**2) / u.sr
+    sigmaIPixel = (sigmaIPixel).to(u.kJy/u.sr)
+    return ((sigmaIPixel**2 * voxelComovingVolume(zmax, Omegapix, R=R)).to((u.kJy/u.sr)**2 * u.Mpc**3),
+            (sigmaIPixel**2 * voxelComovingVolume(zmin, Omegapix, R=R)).to((u.kJy/u.sr)**2 * u.Mpc**3))

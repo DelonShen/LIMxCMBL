@@ -1,1 +1,2 @@
-CCAT-prime CII 3.5 8.1
+COMAP CO 2.4 3.4
+
