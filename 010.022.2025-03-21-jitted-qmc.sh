@@ -6,7 +6,7 @@ print("\n".join(map(str, lambda_idxs)))
 ')
 
 readarray -t lambda_idxs <<< "$lambda_values"
-next=301
+nb=100
 
 
 date=$(date +%Y-%m-%d)
@@ -16,7 +16,7 @@ partition="kipac"
 time_limit="72:00:00"
 num_nodes=1
 mem_per_cpu="4G"
-cpus_per_task=2
+cpus_per_task=8
 
 
 
@@ -32,7 +32,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
       
     lambda_formatted=$(echo $lambda_idx | tr '.' 'p')
     
-    job_name="010.021-${name}-${lambda_formatted}-${zmin}-${zmax}-${next}"
+    job_name="010.021-${name}-${lambda_formatted}-${zmin}-${zmax}-${nb}"
     output_file="logs/${date}-${job_name}.out"
     error_file="logs/${date}-${job_name}.err"
 
@@ -50,7 +50,7 @@ for lambda_idx in "${lambda_idxs[@]}"; do
 
 export JAX_PLATFORMS=cpu
 
-python -u 010.021.2025-03-15-reopening-case-for-cpu.py ${lambda_idx} ${next} \${SLURM_ARRAY_TASK_ID} ${zmin} ${zmax} ${line}
+python -u 010.021.2025-03-15-reopening-case-for-cpu.py ${lambda_idx} ${nb} \${SLURM_ARRAY_TASK_ID} ${zmin} ${zmax} ${line}
 
 EOF
     echo ${job_name}
