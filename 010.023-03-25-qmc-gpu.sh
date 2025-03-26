@@ -5,11 +5,11 @@ nb=100
 date=$(date +%Y-%m-%d)
 
 # Set the Slurm parameters
-partition="owners"
-time_limit="3:00:00"
+partition="hns,owners"
+time_limit="2:00:00"
 num_nodes=1
 cpus_per_task=1
-mem_per_node="64G"
+mem_per_node="8G"
 
 
 
@@ -22,7 +22,7 @@ while IFS= read -r line; do
       
       read -r name line zmin zmax lm <<< "$line"
       
-for lambda_idx in $(seq 23 -1 ${lm}); do
+for lambda_idx in $(seq 24 -1 ${lm}); do
     job_name="010.023-comb-${name}-${lambda_idx}-${zmin}-${zmax}-${nb}"
     sbatch << EOF
 #!/bin/bash
@@ -45,6 +45,7 @@ done
 
 EOF
     echo ${job_name}
+    break
 done
 done < "$input_file"
 
