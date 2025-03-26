@@ -11,7 +11,6 @@ import jax.numpy as jnp
 
 from jax import config
 config.update("jax_enable_x64", True)
-config.update('jax_platform_name', 'cpu')
 
 
 
@@ -38,7 +37,7 @@ line_str = sys.argv[7]
 print(line_str)
 _KI = kernels[line_str]
 
-oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/cross_'
+oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
 oup_fname += '%s_zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_b_%d_%d_%d_jax_qmc.npy'%(line_str,
                                                                                 zmin, zmax, 
                                                                                 Lambda_idx, 
@@ -71,13 +70,36 @@ from interpax import interp1d as interp1dx
 from tqdm import trange, tqdm
 
 @jax.jit
-def f_integrand(x):
-    chi, chip, _chib = x[0], x[1], x[2]
-    chi = chi.reshape(-1, 1)
-    chip = chip.reshape(-1, 1)
-    _chib = _chib.reshape(-1, 1)
+def f_auto_integrand(chi, chip, _chib):
+    #LoLo
+    plus = _chib*(1+deltas.reshape(1, -1))
+    mins = _chib*(1-deltas.reshape(1, -1))
+    _idxs = (chimin < plus) & (plus < chimax) & (chimin < mins) & (mins < chimax)
+    LoLo_integrand  = jnp.where(_idxs,
+                               f_KILo(plus, 
+                                      external_chi = chi,
+                                      Lambda=Lambda) 
+                                * f_KILo(mins, 
+                                         external_chi = chip,
+                                         Lambda=Lambda),
+                               0)
 
-    return f_cross_integrand(chi, chip, _chib) + f_cross_integrand(chip, chi, _chib)
+    LoLo_integrand += jnp.where(_idxs,
+                               f_KILo(mins, 
+                                      external_chi = chi,
+                                      Lambda=Lambda) 
+                                * f_KILo(plus, 
+                                         external_chi = chip,
+                                         Lambda=Lambda),0)
+    LoLo_integrand *= (2 / _chib) * deltas.reshape(1, -1)
+    LoLo_integrand = jnp.einsum('pd, pdl->pld', LoLo_integrand,
+                                interp1dx(xq = _chib.reshape(-1),x = chibs, 
+                                f=inner_dkparp_integral,
+                                method='linear',))
+
+    LoLo_integrand = jnp.trapezoid(x = np.log(deltas), y = LoLo_integrand, axis=-1)
+    return LoLo_integrand
+
 
 @jax.jit
 def f_cross_integrand(chi, chip, _chib):
@@ -97,6 +119,36 @@ def f_cross_integrand(chi, chip, _chib):
                                         external_chi = chip,
                                         Lambda=Lambda), 0)
     return cross_integrand
+
+
+@jax.jit 
+def f_unfiltered(chi, chip):
+    chi = chi.reshape(-1, 1)
+    chip = chip.reshape(-1, 1)
+
+    _delta = jnp.abs((chi - chip) / (chi + chip))
+    
+    ### bound delta
+    _delta = jnp.where(_delta > 0.7, 0.7, _delta)
+    _delta = jnp.where(_delta < 1e-6, 1e-6, _delta)
+    
+    _chib  = (chi + chip) / 2
+
+    return (4/(chi + chip)**2 
+           * jnp.interp(x = chi, xp = chis, fp = _KI, left = 0, right = 0)
+           * jnp.interp(x = chip, xp = chis, fp = _KI, left = 0, right = 0)
+           * interp2d(xq = _chib.reshape(-1), yq=jnp.log(_delta).reshape(-1), 
+                           x = chibs, y = jnp.log(deltas), f=inner_dkparp_integral,
+                           method='linear',))
+@jax.jit
+def f_integrand(x):
+    chi, chip, _chib = x[0], x[1], x[2]
+    chi = chi.reshape(-1, 1)
+    chip = chip.reshape(-1, 1)
+    _chib = _chib.reshape(-1, 1)
+
+    return  f_auto_integrand(chi, chip, _chib) - (f_cross_integrand(chi, chip, _chib) + f_cross_integrand(chip, chi, _chib))
+
 
 
 
@@ -119,39 +171,48 @@ def _rng_spawn(rng, n_children):
 
 
 n_estimates = 2**3
-n_points = 2**22
+n_points = 2**16
 estimates = np.zeros((n_estimates, 100))
 
 
 rngs = _rng_spawn(qrng.rng, n_estimates)
 
-A = np.prod(b - a)
-dA = A / n_points
-
 for i in trange(n_estimates):
     sample = qrng.random(n = n_points)
+    sample_bin = sample[:, :-1]
 
-    def _curr(a, b):
-        A = np.prod(b - a)
+    a = [l1, l2]
+    b = [r1, r2]
+
+    _chis, _chips = jnp.array(qmc.scale(sample_bin, a, b)).T
+
+    estimates[i] = jnp.mean(f_unfiltered(_chis, _chips), axis = 0)
+
+    edges = np.concatenate(([10], np.linspace(chimin*.9, chimax*1.1, 64), [chimax_sample]))
+    for (l3, r3) in zip(edges, edges[1:]):
+        a = np.array([l1, l2, l3, ])
+        b = np.array([r1, r2, r3, ])
+
+        #only worry about measure for dchib integral
+        #since we want averages in chi/chip bins
+        A = r3-l3
         dA = A / n_points
 
         x = jnp.array(qmc.scale(sample, a, b)).T
-        return np.sum(f_integrand(x) * dA, axis = 0)
+        estimates[i] += jnp.sum(f_integrand(x) * dA, axis = 0)
         
-    edges = np.linspace(chimin, chimax, 2)
-    for (l3, r3) in zip(edges, edges[1:]):
-#        print(l3, r3)
-        a = np.array([l1, l2, l3, ])
-        b = np.array([r1, r2, r3, ])
-        estimates[i] += _curr(a,b)
+
     qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
-   
-integral = np.mean(estimates, axis=0)
-standard_error = np.std(estimates, axis = 0, ddof = 1)
+ 
+integral = jnp.mean(estimates, axis=0)
+
+#I think the error estimate is no longer exact because samples are correlated if we generate once
+#and rescale for each bin
+standard_error = jnp.std(estimates, axis = 0, ddof = 1)
 
 
 
-np.save(oup_fname, integral/dchi_binned**2)
+np.save(oup_fname, integral)
 np.save(oup_fname + 'relerr', standard_error/integral)
 
 print(standard_error/integral)

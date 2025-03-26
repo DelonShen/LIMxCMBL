@@ -123,7 +123,7 @@ def _rng_spawn(rng, n_children):
 
 
 n_estimates = 2**3
-n_points = 2**16
+n_points = 2**17
 estimates = np.zeros((n_estimates, 100))
 
 
@@ -141,7 +141,9 @@ for i in trange(n_estimates):
         x = jnp.array(qmc.scale(sample, a, b)).T
         return np.sum(f_integrand(x) * dA, axis = 0)
         
-    for (l3, r3) in [(10, chimin), (chimin, chimax), (chimax, chimax_sample)]:
+    edges = np.concatenate(([10], np.linspace(chimin*.9, chimax*1.1, 8), [chimax_sample]))
+    for (l3, r3) in zip(edges, edges[1:]):
+#        print(l3, r3)
         a = np.array([l1, l2, l3, ])
         b = np.array([r1, r2, r3, ])
         estimates[i] += _curr(a,b)
