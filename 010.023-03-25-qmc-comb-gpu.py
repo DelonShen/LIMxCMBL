@@ -37,7 +37,8 @@ line_str = sys.argv[7]
 print(line_str)
 _KI = kernels[line_str]
 
-oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
+#oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
+oup_fname = '/sdf/scratch/kipac/delon/I_auto/comb_'
 oup_fname += '%s_zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_b_%d_%d_%d_jax_qmc.npy'%(line_str,
                                                                                 zmin, zmax, 
                                                                                 Lambda_idx, 
@@ -49,7 +50,7 @@ print(oup_fname)
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
 
-inner_dkparp_integral = np.load('/oak/stanford/orgs/kipac/users/delon/LIMxCMBL/inner_dkparp_integral.npy')
+inner_dkparp_integral = np.load('inner_dkparp_integral.npy')
 inner_dkparp_integral = inner_dkparp_integral.astype(np.float64)
 inner_dkparp_integral = np.moveaxis(inner_dkparp_integral, 0, -1)
 
