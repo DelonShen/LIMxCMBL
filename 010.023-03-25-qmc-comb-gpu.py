@@ -1,19 +1,4 @@
-from LIMxCMBL.init import *
-from LIMxCMBL.kernels import *
-
-from scipy.interpolate import interp1d, LinearNDInterpolator
-from scipy.integrate import quad, quad_vec, trapezoid, qmc_quad
-
 import sys
-from os.path import isfile
-import jax
-import jax.numpy as jnp
-
-from jax import config
-config.update("jax_enable_x64", True)
-
-
-
 
 Lambda_idx = int(sys.argv[1])
 n_bins = int(sys.argv[2])
@@ -21,21 +6,12 @@ n_bins = int(sys.argv[2])
 idx1 = int(sys.argv[3])
 idx2 = int(sys.argv[4])
 
-Lambda = Lambdas[Lambda_idx]
 
 zmin = float(sys.argv[5])
 zmax = float(sys.argv[6])
 
-kernels = {}
-kernels['CII'] = np.array(KI)
-kernels['CO'] = np.array(KI_CO)
-kernels['Lya'] = np.array(KI_Lya)
-kernels['HI'] = np.array(KI_HI)
-
-
 line_str = sys.argv[7]
 print(line_str)
-_KI = kernels[line_str]
 
 #oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
 oup_fname = '/sdf/scratch/kipac/delon/I_auto/comb_'
@@ -45,7 +21,41 @@ oup_fname += '%s_zmin_%.1f_zmax_%.1f_Lambda_idx_%d_n_b_%d_%d_%d_jax_qmc.npy'%(li
                                                                                 n_bins,idx1, idx2)
 
 
+
 print(oup_fname)
+import os.path
+if(os.path.isfile(oup_fname)):
+    print('already computed')
+    assert(1==0)
+
+
+
+from LIMxCMBL.init import *
+from LIMxCMBL.kernels import *
+
+from scipy.interpolate import interp1d, LinearNDInterpolator
+from scipy.integrate import quad, quad_vec, trapezoid, qmc_quad
+
+from os.path import isfile
+import jax
+import jax.numpy as jnp
+
+from jax import config
+config.update("jax_enable_x64", True)
+
+
+Lambda = Lambdas[Lambda_idx]
+
+
+kernels = {}
+kernels['CII'] = np.array(KI)
+kernels['CO'] = np.array(KI_CO)
+kernels['Lya'] = np.array(KI_Lya)
+kernels['HI'] = np.array(KI_HI)
+
+
+_KI = kernels[line_str]
+
 
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
