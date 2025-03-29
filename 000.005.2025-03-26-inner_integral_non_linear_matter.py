@@ -40,13 +40,13 @@ f_logPnl = interp1d(x = np.log(_tmp_ks),
                  bounds_error=False, fill_value=0)
 
 def integrand(kparp):
-    return (2/(2*np.pi) * np.cos(kparp * 2 * _chibs * _deltas) * np.exp(f_Pnl(np.log(np.sqrt(kparp**2 + kperp2s)))))
+    return (2/(2*np.pi) * np.cos(kparp * 2 * _chibs * _deltas) * np.exp(f_logPnl(np.log(np.sqrt(kparp**2 + kperp2s)))))
 
 print('beginning quad_vec')
 
 
 res, err = quad_vec(integrand, 0, np.inf,
-                  epsabs = 0.0, epsrel=1e-4, limit=1123456, workers=32)
+                  epsabs = 0.0, epsrel=1e-4, limit=1123456, workers=1)
 
 oup = np.reshape(res, (len(chibs), len(deltas)))
 

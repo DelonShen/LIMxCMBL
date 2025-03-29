@@ -139,3 +139,24 @@ def CHIME_Pei():
     sigmaIPixel = (sigmaIPixel).to(u.kJy/u.sr)
     return ((sigmaIPixel**2 * voxelComovingVolume(zmax, Omegapix, R=R)).to((u.kJy/u.sr)**2 * u.Mpc**3),
             (sigmaIPixel**2 * voxelComovingVolume(zmin, Omegapix, R=R)).to((u.kJy/u.sr)**2 * u.Mpc**3))
+
+Pei_dict = {
+        'CCAT-prime': CCAT_prime_Pei,
+        'COMAP': COMAP_Pei,
+        'SPHEREx':SPHEREx_Pei,
+        'HETDEX':HETDEX_Pei,
+        'CHIME': CHIME_Pei
+        }
+
+
+experiments = {}
+with open('LIMxCMBL/_experiments.txt') as f:
+    f.readline() # skip header
+    for line in f:
+        _data = (line.strip().split())
+        experiments[_data[0]] = {}
+        experiments[_data[0]]['line_str'] = _data[1]
+        experiments[_data[0]]['zmin'] = float(_data[2])
+        experiments[_data[0]]['zmax'] = float(_data[3])
+        experiments[_data[0]]['f_Pei'] = Pei_dict[_data[0]]
+        experiments[_data[0]]['Omega_field'] = float(_data[5])* (np.pi/180)**2 #rad^2
