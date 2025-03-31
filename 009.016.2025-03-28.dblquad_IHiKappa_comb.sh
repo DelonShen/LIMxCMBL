@@ -5,12 +5,11 @@ date=$(date +%Y-%m-%d)
 
 # Set the Slurm parameters
 partition="kipac"
-time_limit="24:00:00"
+time_limit="72:00:00"
 num_nodes=1
 mem_per_node="3G"
-cpus_per_task=1
+cpus_per_task=32
 output_dir="logs"
-
 
 
 input_file="LIMxCMBL/experiments.txt"
