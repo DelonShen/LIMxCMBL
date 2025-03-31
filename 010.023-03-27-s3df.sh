@@ -21,7 +21,7 @@ while IFS= read -r line; do
       
       read -r name line zmin zmax lm <<< "$line"
 for lambda_idx in $(seq ${lm} 24); do
-  for midx in $(seq 4040 -1010 0); do
+  for midx in $(seq 0 1010 5049); do
     job_name="${acc}-${partition}-010.023-comb-${name}-${lambda_idx}-${zmin}-${zmax}-${nb}-${midx}"
     sbatch << EOF
 #!/bin/bash

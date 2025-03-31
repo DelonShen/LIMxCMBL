@@ -1,7 +1,7 @@
 #!/bin/bash
 acc="kipac:kipac"
-partition="ampere"
-ngpu=4
+partition="ada"
+ngpu=5
 time_limit="240:00:00"
 #wait or no?
 
