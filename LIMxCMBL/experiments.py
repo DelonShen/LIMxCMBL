@@ -115,7 +115,6 @@ def HETDEX_Pei():
         sigmaFPixel = 5.5e-17 / 5.  * u.erg / u.s / u.cm**2
         # convert from flux to intensity
         sigmaIPixel = sigmaFPixel / Omegapix * R/nuHz   # [erg/s/cm^2/sr/Hz]
-        print(sigmaIPixel.to(u.Jy/u.sr))
         # convert to noise power spectrum
         result = sigmaIPixel**2 * voxelComovingVolume(z, Omegapix, R=R)
         return result.to(u.Mpc**3 * (u.kJy/u.sr)**2)
@@ -159,4 +158,22 @@ with open('LIMxCMBL/_experiments.txt') as f:
         experiments[_data[0]]['zmin'] = float(_data[2])
         experiments[_data[0]]['zmax'] = float(_data[3])
         experiments[_data[0]]['f_Pei'] = Pei_dict[_data[0]]
-        experiments[_data[0]]['Omega_field'] = float(_data[5])* (np.pi/180)**2 #rad^2
+        experiments[_data[0]]['Omega_field'] = (float(_data[5]) * u.deg**2).to(u.rad**2) #rad^2
+
+
+#2011.08193 table 1.
+experiments['CCAT-prime']['Omega_pix'] = (30 * u.arcsec)**2 / (8 * np.log(2))
+#1503.08833 Table 1
+experiments['COMAP']['Omega_pix'] = (6 * u.arcmin)**2 / (8 * np.log(2))
+#2103.01971 table 1
+experiments['SPHEREx']['Omega_pix'] = (6 * u.arcsec)**2
+experiments['HETDEX']['Omega_pix']  = (3 * u.arcsec)**2
+#2201.07869 Table 2.
+experiments['CHIME']['Omega_pix']  = (40*u.arcmin)**2
+
+
+
+experiments['CCAT-prime']['R'] = 100
+experiments['COMAP']['R'] = 800
+experiments['SPHEREx']['R'] = 150
+experiments['HETDEX']['R']  = 800
