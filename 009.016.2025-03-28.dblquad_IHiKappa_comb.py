@@ -129,7 +129,7 @@ left = chi_bin_edges[curr_bin]
 right = chi_bin_edges[curr_bin + 1]
 print(left, right)
 
-res, _ = quad_vec(bin_integrand, left, right, epsabs =0, epsrel=1e-3)
+res, _ = quad_vec(bin_integrand, left, right, epsabs =0, epsrel=1e-3, workers=-1)
 res /= dchi_binned
 
 np.save(oup_fname, res)
