@@ -121,23 +121,78 @@ def HETDEX_Pei():
     return _HETDEX_Pei(zmax), _HETDEX_Pei(zmin)
 
 def CHIME_Pei():
-    zmin = 1.
-    zmax = 1.3
-    #from 2201.07869 App. A.3
-    R = ((nu_HI/(1+(zmin + zmax)/2))/(390 * u.kHz)).to(u.dimensionless_unscaled)
-    Omegapix = (40*u.arcmin)**2
-    Omegasurv = 31000 * u.deg**2
+    #see 012.003.2025-04-15.CHIME-noise-figure-out.ipynb
+    #basically follows 2201.07869 and 1405.1452 
+    #borrows code from github/philbull/RadioFisher/process_chime_baselines.py
 
-    #1809.06384
-    #0910.5007
-    #2201.07869 App. A.3
-    sigmaT = 2.9e-4 * u.K
-    sigmaIPixel = (2. * (nu_HI/(1+zmin))**2 * cu.k_B
-                   * sigmaT # [K]
-                   / cu.c**2) / u.sr
-    sigmaIPixel = (sigmaIPixel).to(u.kJy/u.sr)
-    return ((sigmaIPixel**2 * voxelComovingVolume(zmax, Omegapix, R=R)).to((u.kJy/u.sr)**2 * u.Mpc**3),
-            (sigmaIPixel**2 * voxelComovingVolume(zmin, Omegapix, R=R)).to((u.kJy/u.sr)**2 * u.Mpc**3))
+
+    zmin = 1
+    zmax = 1.3
+    
+    def _Pei(zcenter):
+        #table 2. of 2201.07869
+        Tsys = 55*u.K
+        Ssky = 31000 * u.deg**2
+        lmbda = 21*u.cm*(1+zcenter)
+        nu_center = cu.c / (lmbda)
+        
+        
+        ttot = 1*u.yr
+        Nant = 256
+        npol = 2
+        Ncyl = 4
+        wcyl = 20*u.m
+        lcyl = 78*u.m
+        
+        SFOV = (90*u.deg * (lmbda/wcyl *(u.rad)))
+        
+        
+        eta = 0.7
+        Ae = eta * lcyl/Nant * wcyl
+        
+        l4_over_Ae2 = ((lmbda/wcyl).si * u.rad)**2 * lmbda**2/(eta * lcyl / Nant)**2
+        
+        nu_HI = cu.c / (21 * u.cm)
+    
+    
+        Ddish = 20. #I believe thisis the same as cylinder width in 2201.07869
+        Dmin = 20.
+        Ndish = Nant * Ncyl
+        
+        nu = nu_center.to(u.MHz).value # MHz
+        l = 3e8 / (nu * 1e6) # Lambda [m]
+        # Cut baselines d < d_fov
+        
+        nu_data = 800 #[MHz] they choose to tabulate at a different central nu but we're close enough
+        outfile = "data/nx_CHIME_%d.dat" % nu_data
+        AVG_SMALL_BASELINES = False
+        Dcut = Ddish # Cut baselines below this separation
+    
+        data = np.loadtxt(outfile)
+        x, n_x = data.T
+        _u = x * nu
+        nn = n_x / nu**2
+    
+        # Integrate n(u) to find normalisation (should give unity if no baseline cuts applied)   
+        norm = simps(2.*np.pi*nn*_u, _u)
+        nn_normalized = nn * 0.5 * Ndish * (Ndish - 1) / norm
+    
+    
+    
+        #take fid n_u to be median of n(u) as opposed to accounting for anisotropy
+        fid_n_u = np.median(nn_normalized) * u.rad**2 #I think that n_u should be rad^2 bc u is units 1/rad
+    
+        noise_power = Tsys**2 / (nu_HI * npol * ttot) * Ssky/(SFOV) * l4_over_Ae2 * 1/fid_n_u
+        noise_sigma = (2. * nu_center**2 * cu.k_B
+                       * np.sqrt(noise_power)
+                       / cu.c**2) / u.sr
+        CN = (noise_sigma**2).to(u.kJy**2/u.sr**2)
+        rnu = (cu.c * (1+zcenter)**2 / (cosmo['h']*(100*(u.km/u.s/u.Mpc))*ccl.background.h_over_h0(cosmo, 1./(zcenter+1)))).to(u.Mpc)
+
+        return CN * rnu * (ccl.comoving_radial_distance(cosmo, 1/(1+zcenter)) * u.Mpc)**2        
+    return _Pei(zmax), _Pei(zmin)
+
+#####################################
 
 Pei_dict = {
         'CCAT-prime': CCAT_prime_Pei,

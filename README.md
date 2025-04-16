@@ -14,7 +14,7 @@ Once the inner integral is tabulate we can compute relevant spectra:
 - **High-passed LIM spectrum** [`010.023-03-25-qmc-comb-gpu.py`](010.023-03-25-qmc-comb-gpu.py)
 - **Filtered LIM noise spectrum** [`009.010.2025-02-20-comb-cov-bin-mpm-quad.py`](009.010.2025-02-20-comb-cov-bin-mpm-quad.py)
     - Values of white noise amplitude computed in [`LIMxCMBL/experiments.py`](LIMxCMBL/experiments.py) 
-    - Mathematica notebook computing the analytical form of the filtered LIM noise spectra in terms of pre-tabulated Sin function can be found at [`008.008.2025-02-17-analytical-eLOeLO.nb`](008.008.2025-02-17-analytical-eLOeLO.nb).
+    - Mathematica notebook computing the analytical form of the filtered LIM noise spectra in terms of sine- and cosine-integrals can be found at [`008.008.2025-02-17-analytical-eLOeLO.nb`](008.008.2025-02-17-analytical-eLOeLO.nb).
 
 The noise spectra for CMB lensing, store in `LIMxCMBL/N0.npy`, is assumed to be only $N^{(0)}$ which we tabulate from [LensQuEst](https://github.com/DelonShen/LensQuEst) for a SO-like survey. 
 
