@@ -1,6 +1,7 @@
 #!/bin/bash
 
-for curr in {0..99}; do
+#for curr in {0..99}; do
+for curr in "5" "13"; do
     echo $curr
     # Set the Slurm job parameters
     job_name_prefix="nonlinearmatter-inner-integral-ell-idx-${curr}"
@@ -9,7 +10,7 @@ for curr in {0..99}; do
     partition="kipac"
     num_nodes=1
     mem_per_node="64G"
-    cpus_per_task=32
+    cpus_per_task=256
     
     # Create a Slurm job script for the data file
     job_name="${job_name_prefix}"

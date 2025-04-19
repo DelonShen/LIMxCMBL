@@ -34,16 +34,17 @@ def CCAT_prime_Pei():
 
     return worst_Pei, best_Pei
 
-def COMAP_Pei():
+def old_COMAP_Pei(extra_info=False):
     #Li Wechsler+ 16 1503.08833 Table 1
+    #updated to COMAP early science 2111.05931
     zmin = 2.4
     zmax = 3.4
 
     R = 800
-    theta = 6*u.arcmin #theta fwhm
+    theta = 4.5*u.arcmin #theta fwhm
     Omegapix = theta**2 / (8  * np.log(2))
-    Omegasurv = 2.5 * u.deg**2
-    tObs = 1500 * u.hr
+    Omegasurv = 12 * u.deg**2
+    tObs = 5000 * u.hr #5000 hours number comes from 2111.05929
     # observing time per pixel [s]
     tPixel = tObs * Omegapix / Omegasurv
     Tsys = 40 * u.K # system temperature [K]
@@ -59,6 +60,8 @@ def COMAP_Pei():
                    * Tsys / np.sqrt(nFeed * dnu * tPixel) # [K]
                    / cu.c**2) / u.sr
     sigmaIPixel = (sigmaIPixel).to(u.kJy/u.sr)
+    if(extra_info):
+        return tPixel, (Tsys / np.sqrt(nFeed * dnu * tPixel)), sigmaIPixel, voxelComovingVolume(zmin, Omegapix, R=R), voxelComovingVolume(zmax, Omegapix, R=R)
 
     return ((sigmaIPixel**2 * voxelComovingVolume(zmin, Omegapix, R=R)).to(u.kJy**2 / u.sr**2 * u.Mpc**3),
             (sigmaIPixel**2 * voxelComovingVolume(zmax, Omegapix, R=R)).to(u.kJy**2 / u.sr**2 * u.Mpc**3))
@@ -67,7 +70,7 @@ def SPHEREx_Pei():
     #1412.4872
     #2103.01971
     zmin = 5
-    zmax = 8.2
+    zmax = 8
     idxs = np.where((zs < zmax) & (zs>zmin))[0]
     R = 150
     Omegapix = (6*u.arcsec)**2
@@ -100,12 +103,13 @@ def SPHEREx_Pei():
 
 def HETDEX_Pei():
     #again borrowing from Manu, LIM branch of Halogen
+    #and additional values from 2110.04298
     zmin = 1.9
     zmax = 3.5
 
     R = 800
     Omegapix = (3*u.arcsec)**2
-    Omegasurv = 300 * u.deg**2
+    Omegasurv = 540 * u.deg**2
 
     def _HETDEX_Pei(z):
         # focus on Lyman-alpha
@@ -194,14 +198,6 @@ def CHIME_Pei():
 
 #####################################
 
-Pei_dict = {
-        'CCAT-prime': CCAT_prime_Pei,
-        'COMAP': COMAP_Pei,
-        'SPHEREx':SPHEREx_Pei,
-        'HETDEX':HETDEX_Pei,
-        'CHIME': CHIME_Pei
-        }
-
 
 experiments = {}
 with open('LIMxCMBL/_experiments.txt') as f:
@@ -212,18 +208,17 @@ with open('LIMxCMBL/_experiments.txt') as f:
         experiments[_data[0]]['line_str'] = _data[1]
         experiments[_data[0]]['zmin'] = float(_data[2])
         experiments[_data[0]]['zmax'] = float(_data[3])
-        experiments[_data[0]]['f_Pei'] = Pei_dict[_data[0]]
         experiments[_data[0]]['Omega_field'] = (float(_data[5]) * u.deg**2).to(u.rad**2) #rad^2
 
 
 #2011.08193 table 1.
 experiments['CCAT-prime']['Omega_pix'] = (30 * u.arcsec)**2 / (8 * np.log(2))
 #1503.08833 Table 1
-experiments['COMAP']['Omega_pix'] = (6 * u.arcmin)**2 / (8 * np.log(2))
+experiments['COMAP']['Omega_pix'] = (4.5 * u.arcmin)**2 / (8 * np.log(2))
 #2103.01971 table 1
 experiments['SPHEREx']['Omega_pix'] = (6 * u.arcsec)**2
-experiments['HETDEX']['Omega_pix']  = (3 * u.arcsec)**2
-#2201.07869 Table 2.
+experiments['HETDEX']['Omega_pix']  = (3 * u.arcsec)**2 #2110.04298
+#2201.07869 says CHIME's angular resolution is ~40'
 experiments['CHIME']['Omega_pix']  = (40*u.arcmin)**2
 
 
@@ -232,3 +227,34 @@ experiments['CCAT-prime']['R'] = 100
 experiments['COMAP']['R'] = 800
 experiments['SPHEREx']['R'] = 150
 experiments['HETDEX']['R']  = 800
+
+
+def Gamma_nu(nuobs, nurest):
+    _z = (nurest/nuobs - 1).si.value
+    return (cu.c * 
+            (ccl.comoving_radial_distance(cosmo, 1./(1+_z))*u.Mpc)**2
+            / (h*100*ccl.background.h_over_h0(cosmo,1./(1+_z)) * (u.km/u.s/u.Mpc)))
+ 
+def COMAP_Pei():
+    nurest = (115.27 * u.GHz)
+    Omega_field = experiments['COMAP']['Omega_field']
+   
+    def _Pei(nuobs):
+        return ((40 * u.K)**2 /19 / (5000 * u.hr) 
+         * (nuobs)**2 * (2 * cu.k_B / cu.c**2)**2 
+         * nurest  * (Omega_field.to(u.sr)).value * Gamma_nu(nuobs, nurest)).to((u.kJy)**2 * u.Mpc**3)
+    nuobs = np.linspace(26,34,1000) * u.GHz
+    _Peis = _Pei(nuobs)
+    return nuobs, _Peis
+
+
+Pei_dict = {
+        'CCAT-prime': CCAT_prime_Pei,
+        'COMAP': COMAP_Pei,
+        'SPHEREx':SPHEREx_Pei,
+        'HETDEX':HETDEX_Pei,
+        'CHIME': CHIME_Pei
+        }
+
+for _e in experiments:
+    experiments[_e]['f_Pei'] = Pei_dict[_e]
