@@ -15,7 +15,7 @@ def voxelComovingVolume(z, pixarea,  R=None):
     result *= pixelComovingArea(pixarea, z)
     return result
 
-def CCAT_prime_Pei():
+def old_CCAT_prime_Pei():
     #Sato-Polito+20 Table 1.
     zmin = 3.5
     zmax = 8.1
@@ -66,7 +66,7 @@ def old_COMAP_Pei(extra_info=False):
     return ((sigmaIPixel**2 * voxelComovingVolume(zmin, Omegapix, R=R)).to(u.kJy**2 / u.sr**2 * u.Mpc**3),
             (sigmaIPixel**2 * voxelComovingVolume(zmax, Omegapix, R=R)).to(u.kJy**2 / u.sr**2 * u.Mpc**3))
 
-def SPHEREx_Pei():
+def old_SPHEREx_Pei():
     #1412.4872
     #2103.01971
     zmin = 5
@@ -101,7 +101,7 @@ def SPHEREx_Pei():
 
     return worst, best
 
-def HETDEX_Pei():
+def old_HETDEX_Pei():
     #again borrowing from Manu, LIM branch of Halogen
     #and additional values from 2110.04298
     zmin = 1.9
@@ -124,7 +124,7 @@ def HETDEX_Pei():
         return result.to(u.Mpc**3 * (u.kJy/u.sr)**2)
     return _HETDEX_Pei(zmax), _HETDEX_Pei(zmin)
 
-def CHIME_Pei():
+def old_CHIME_Pei():
     #see 012.003.2025-04-15.CHIME-noise-figure-out.ipynb
     #basically follows 2201.07869 and 1405.1452 
     #borrows code from github/philbull/RadioFisher/process_chime_baselines.py
@@ -225,8 +225,9 @@ experiments['CHIME']['Omega_pix']  = (40*u.arcmin)**2
 
 experiments['CCAT-prime']['R'] = 100
 experiments['COMAP']['R'] = 800
-experiments['SPHEREx']['R'] = 150
+experiments['SPHEREx']['R'] = 41
 experiments['HETDEX']['R']  = 800
+experiments['CHIME']['R'] = 1700
 
 
 def Gamma_nu(nuobs, nurest):
@@ -241,12 +242,123 @@ def COMAP_Pei():
    
     def _Pei(nuobs):
         return ((40 * u.K)**2 /19 / (5000 * u.hr) 
-         * (nuobs)**2 * (2 * cu.k_B / cu.c**2)**2 
-         * nurest  * (Omega_field.to(u.sr)).value * Gamma_nu(nuobs, nurest)).to((u.kJy)**2 * u.Mpc**3)
+         * (nuobs)**2 * (2 * cu.k_B / cu.c**2 / u.sr)**2 
+         * nurest  * (Omega_field.to(u.sr)).value * Gamma_nu(nuobs, nurest)).to((u.kJy/u.sr)**2 * u.Mpc**3)
     nuobs = np.linspace(26,34,1000) * u.GHz
     _Peis = _Pei(nuobs)
     return nuobs, _Peis
 
+def CCAT_prime_Pei():
+    #Sato-Polito+20 Table 1.
+    zmin = 3.5
+    zmax = 8.1
+    ##ccat prime
+    Omegapix = experiments['CCAT-prime']['Omega_pix']
+
+    Vvox = voxelComovingVolume(zmin, Omegapix, R=100)
+    ret = (5.7e4 *u.Jy / u.sr )**2 * Vvox
+    ret = ret.to((u.kJy / u.sr)**2 * u.Mpc**3)
+
+    return np.array([420, 420])*u.GHz, np.array([ret.value, ret.value]) * (u.kJy / u.sr)**2 * u.Mpc**3
+
+def HETDEX_Pei():
+    sF = 1e-17 * u.erg / u.s / u.cm**2
+    R = experiments['HETDEX']['R']
+    nurest = 2456.43 * u.THz #Lya
+    Opix = experiments['HETDEX']['Omega_pix']
+    
+    def _Pei(nuobs):
+        return (sF**2 
+                * R 
+                / nuobs **3 
+                / Opix 
+                * nurest 
+                / u.sr 
+                * Gamma_nu(nuobs, nurest))
+    nuobs = np.linspace(545,857,1000) * u.THz
+    _Peis = _Pei(nuobs)
+    return nuobs, _Peis
+
+def SPHEREx_Pei():
+    _e = 'SPHEREx'
+    Omegapix = experiments[_e]['Omega_pix']
+    R = experiments[_e]['R']
+    Omegasurv = experiments[_e]['Omega_field']
+    mAB5Sigma = 22
+    f5Sigma = 10.**((8.9-mAB5Sigma)/2.5) * u.Jy
+    sigmaFSource = f5Sigma / 5.
+    nPixEff = 2.
+    sigmaFPixel = sigmaFSource / np.sqrt(nPixEff)
+    sigmaIPixel = sigmaFPixel / Omegapix 
+    nurest = 2456.43 * u.THz #Lya
+
+
+    def _Pei(nuobs):
+        return (sigmaIPixel**2
+                / R * nurest/nuobs
+                * Omegapix / u.sr
+                * Gamma_nu(nuobs, nurest))
+    nuobs = np.linspace(270,400,1000) * u.THz
+    _Peis = _Pei(nuobs)
+    return nuobs, _Peis
+
+def CHIME_Pei():
+    nurest = cu.c/(21.106114054160 * u.cm)
+    Ofield = experiments['CHIME']['Omega_field']
+    dnu = (800 * u.MHz - 400 * u.MHz)/(256 * 4)
+
+    nuobs = np.linspace(617, 710,1000) * u.MHz
+    B = max(nuobs) - min(nuobs)
+    lobs = cu.c/nuobs
+    zobs = (nurest /nuobs - 1).si
+
+    Tsys = 55*u.K
+    Ssky = 31000 * u.deg**2
+    
+    ttot = 1*u.yr
+    Nant = 256
+    npol = 2
+    Ncyl = 4
+    wcyl = 20*u.m
+    lcyl = 78*u.m
+
+    eta = 0.7
+    Ae = eta * lcyl/Nant * wcyl
+    Obeam = ((lobs**2/Ae)) * u.sr
+    du2 = (2*np.pi)**2/Obeam
+    du = np.sqrt(du2)
+    
+    SFOV = (90*u.deg * (lobs/wcyl *(u.rad)))
+    bmin = 0.3048 * u.m
+    bmax = 102 * u.m
+    Db = (bmax - bmin)
+    umin = bmin / lobs * 1/u.rad
+    umax = bmax / lobs * 1/u.rad
+    Ndish = Nant * Ncyl
+    
+    tp = ttot * SFOV / Ofield
+    n_u_z = Ndish * (Ndish - 1) / (2 * np.pi) / (umax**2 - umin**2)
+    N_dU = (n_u_z * du**2).si
+    N_dU_fid = N_dU[0]
+    
+    N_u = ((umax-umin)/du).si
+    PeT = (Tsys ** 2 
+          / tp
+          / dnu 
+           / npol 
+          / (N_dU_fid))
+    PeV = (PeT * Obeam**2 *
+          (2 * cu.k_B * nuobs**2 / cu.c**2)**2 / u.sr**2).to(u.mJy**2)   
+
+    PeI_dV = 1/(2*np.pi)**4 * np.pi * du**2 * (umax**2 - umin**2) * 2 * PeV
+
+    PeI = (PeI_dV 
+           * dnu / nuobs 
+           * nurest/nuobs 
+           * Obeam/u.sr * Gamma_nu(nuobs, nurest)).to((u.kJy/u.sr)**2*u.Mpc**3)
+    return nuobs, PeI
+
+#######
 
 Pei_dict = {
         'CCAT-prime': CCAT_prime_Pei,
