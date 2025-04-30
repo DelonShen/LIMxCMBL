@@ -125,7 +125,6 @@ def CHIME_Pei():
     dnu = (800 * u.MHz - 400 * u.MHz)/(256 * 4)
 
     nuobs = np.linspace(617, 710,1000) * u.MHz
-    B = max(nuobs) - min(nuobs)
     lobs = cu.c/nuobs
     zobs = (nurest /nuobs - 1).si
 
@@ -148,7 +147,6 @@ def CHIME_Pei():
     SFOV = (90*u.deg * (lobs/wcyl *(u.rad)))
     bmin = 0.3048 * u.m
     bmax = 102 * u.m
-    Db = (bmax - bmin)
     umin = bmin / lobs * 1/u.rad
     umax = bmax / lobs * 1/u.rad
     Ndish = Nant * Ncyl
@@ -158,7 +156,6 @@ def CHIME_Pei():
     N_dU = (n_u_z * du**2).si
     N_dU_fid = N_dU[0]
     
-    N_u = ((umax-umin)/du).si
     PeT = (Tsys ** 2 
           / tp
           / dnu 
