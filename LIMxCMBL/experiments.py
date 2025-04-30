@@ -53,12 +53,16 @@ def Gamma_nu(nuobs, nurest):
             (ccl.comoving_radial_distance(cosmo, 1./(1+_z))*u.Mpc)**2
             / (h*100*ccl.background.h_over_h0(cosmo,1./(1+_z)) * (u.km/u.s/u.Mpc)))
  
-def COMAP_Pei():
+def COMAP_Pei(
+        Omega_field = experiments['COMAP']['Omega_field'],
+        Tsys = 40 * u.K,
+        tsurvey = 5000 * u.hr,
+        Nfeeds = 19
+        ):
     nurest = (115.27 * u.GHz)
-    Omega_field = experiments['COMAP']['Omega_field']
    
     def _Pei(nuobs):
-        return ((40 * u.K)**2 /19 / (5000 * u.hr) 
+        return ((Tsys)**2 /Nfeeds / (tsurvey) 
          * (nuobs)**2 * (2 * cu.k_B / cu.c**2 / u.sr)**2 
          * nurest  * (Omega_field.to(u.sr)).value * Gamma_nu(nuobs, nurest)).to((u.kJy/u.sr)**2 * u.Mpc**3)
     nuobs = np.linspace(26,34,1000) * u.GHz
@@ -78,14 +82,15 @@ def CCAT_prime_Pei():
 
     return np.array([420, 420])*u.GHz, np.array([ret.value, ret.value]) * (u.kJy / u.sr)**2 * u.Mpc**3
 
-def HETDEX_Pei():
-    sF = 1e-17 * u.erg / u.s / u.cm**2
-    R = experiments['HETDEX']['R']
+def HETDEX_Pei(
+        PF = 1e-34 * (u.erg / u.s / u.cm**2)**2,
+        R = experiments['HETDEX']['R'],
+        Opix = experiments['HETDEX']['Omega_pix']
+        ):
+   
     nurest = 2456.43 * u.THz #Lya
-    Opix = experiments['HETDEX']['Omega_pix']
-    
     def _Pei(nuobs):
-        return (sF**2 
+        return (PF
                 * R 
                 / nuobs **3 
                 / Opix 
@@ -96,15 +101,15 @@ def HETDEX_Pei():
     _Peis = _Pei(nuobs)
     return nuobs, _Peis
 
-def SPHEREx_Pei():
-    _e = 'SPHEREx'
-    Omegapix = experiments[_e]['Omega_pix']
-    R = experiments[_e]['R']
-    Omegasurv = experiments[_e]['Omega_field']
-    mAB5Sigma = 22
+def SPHEREx_Pei(
+        Omegapix = experiments['SPHEREx']['Omega_pix'],
+        R = experiments['SPHEREx']['R'],
+        Omegasurv = experiments['SPHEREx']['Omega_field'],
+        mAB5Sigma = 22,
+        nPixEff = 2.,
+        ):
     f5Sigma = 10.**((8.9-mAB5Sigma)/2.5) * u.Jy
     sigmaFSource = f5Sigma / 5.
-    nPixEff = 2.
     sigmaFPixel = sigmaFSource / np.sqrt(nPixEff)
     sigmaIPixel = sigmaFPixel / Omegapix 
     nurest = 2456.43 * u.THz #Lya
@@ -119,34 +124,36 @@ def SPHEREx_Pei():
     _Peis = _Pei(nuobs)
     return nuobs, _Peis
 
-def CHIME_Pei():
+def CHIME_Pei(Ofield = experiments['CHIME']['Omega_field'],
+              Tsys = 55*u.K,
+              Ssky = 31000 * u.deg**2,
+              ttot = 1*u.yr,
+              Nant = 256,
+              npol = 2,
+              Ncyl = 4,
+              wcyl = 20*u.m,
+              dant = 0.3048 * u.m,
+              eta = 0.7,
+              bmin = 0.3048 * u.m,
+              bmax = 102 * u.m
+              ):
+
     nurest = cu.c/(21.106114054160 * u.cm)
-    Ofield = experiments['CHIME']['Omega_field']
     dnu = (800 * u.MHz - 400 * u.MHz)/(256 * 4)
 
     nuobs = np.linspace(617, 710,1000) * u.MHz
     lobs = cu.c/nuobs
     zobs = (nurest /nuobs - 1).si
 
-    Tsys = 55*u.K
-    Ssky = 31000 * u.deg**2
     
-    ttot = 1*u.yr
-    Nant = 256
-    npol = 2
-    Ncyl = 4
-    wcyl = 20*u.m
-    lcyl = 78*u.m
+    lcyl = dant * Nant
 
-    eta = 0.7
     Ae = eta * lcyl/Nant * wcyl
     Obeam = ((lobs**2/Ae)) * u.sr
     du2 = (2*np.pi)**2/Obeam
     du = np.sqrt(du2)
     
     SFOV = (90*u.deg * (lobs/wcyl *(u.rad)))
-    bmin = 0.3048 * u.m
-    bmax = 102 * u.m
     umin = bmin / lobs * 1/u.rad
     umax = bmax / lobs * 1/u.rad
     Ndish = Nant * Ncyl
