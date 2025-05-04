@@ -18,7 +18,25 @@ def get_f_Kkappa():
                     fill_value='extrapolate')
 
 
+#note that technically zmax_sample should be ~1100 and not 20 as we currently have it
+#but this would only be a problem for a kernel that has broad support like CMB lensing
+#for LIM and LIMxCMBL, zmax_sample=20 should not be a problem b.c. of the windows + sincs
+#here we just compute CL_kappa with Limber for zmax_sample = zstar
+_zmax_sample = 1100
+_amax_sample = 1/(_zmax_sample+1)
+_chimax_sample = ccl.comoving_radial_distance(cosmo, _amax_sample)
+_chis = np.linspace(1e-8, _chimax_sample, 10**6)
+_a_s = ccl.scale_factor_of_chi(cosmo, _chis)
+_zs = 1/_a_s - 1
+_Dz = ccl.growth_factor(cosmo, _a_s)
+_Wk = cmbk.get_kernel(_chis)[0]
 
+_tmp = np.zeros((len(ells), len(_chis)))
+for ell_idx in range(len(ells)):
+    _tmp[ell_idx] = (_Wk * _Dz)**2/_chis**2 * ccl.linear_matter_power(cosmo, (ells[ell_idx] + 1/2) / _chis, 1)
+
+from scipy.integrate import trapezoid,simpson
+ClKK_perfect = simpson(x=_chis, y=_tmp)
 
 ##### LIM from SFR Table
 from scipy.integrate import simpson as simps 

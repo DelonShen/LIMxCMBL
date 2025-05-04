@@ -16,6 +16,6 @@ Once the inner integral is tabulate we can compute relevant spectra:
     - Values of white noise amplitude computed in [`LIMxCMBL/experiments.py`](LIMxCMBL/experiments.py) 
     - Mathematica notebook computing the analytical form of the filtered LIM noise spectra in terms of sine- and cosine-integrals can be found at [`008.008.2025-02-17-analytical-eLOeLO.nb`](008.008.2025-02-17-analytical-eLOeLO.nb).
 
-The noise spectra for CMB lensing, store in `LIMxCMBL/N0.npy`, is assumed to be only $N^{(0)}$ which we tabulate from [LensQuEst](https://github.com/DelonShen/LensQuEst) for a SO-like survey. 
+The noise spectra for CMB lensing, stored in `data/N0_*`, is assumed to be only $N^{(0)}$ which we tabulate using [LensQuEst](https://github.com/DelonShen/LensQuEst).
 
-With all the ingrediants in place, the SNR is computed for all experiments/lines in [`011.006.2025-03-28-SNR-calculation-generic.ipynb`](011.006.2025-03-28-SNR-calculation-generic.ipynb)
+With all the ingrediants in place, the SNR is computed for all experiments/lines in `[011.006+]`
