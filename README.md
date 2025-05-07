@@ -11,6 +11,7 @@ Once the inner integral is tabulate we can compute relevant spectra:
 - **Unfiltered LIM spectrum** [`[CII]`](010.000.2025-02-24.LIM_auto.ipynb)[`[CO]`](010.000.2025-03-11.LIM_auto_CO.ipynb)[`[Lya]`](010.000.2025-03-13.LIM_auto_Lya.ipynb)[`[HI]`](010.000.2025-03-18.LIM_auto_HI.ipynb)
 - **Unfiltered LIM x CMB lensing cross spectrum** [`[CII]`](009.013.2025-03-04-Ik-quad-external.ipynb)[`[CO]`](009.015.2025-03-11-Ik-quad-external-CO.ipynb)[`[Lya]`](009.015.2025-03-11-Ik-quad-external-Lya.ipynb)[`[HI]`](009.015.2025-03-18-Ik-quad-external-HI.ipynb)
 - **High-passed LIM x CMB lensing cross spectrum** [`009.016.2025-03-28.dblquad_IHiKappa_comb.py`](009.016.2025-03-28.dblquad_IHiKappa_comb.py)
+    - High-passed LIM x CMBL lensing computed using the Limber approximation can be found in [`009.017.2025-05-06.IHiKappa_Limber.ipynb`](009.017.2025-05-06.IHiKappa_Limber.ipynb)
 - **High-passed LIM spectrum** [`010.023-03-25-qmc-comb-gpu.py`](010.023-03-25-qmc-comb-gpu.py)
 - **Filtered LIM noise spectrum** [`009.010.2025-02-20-comb-cov-bin-mpm-quad.py`](009.010.2025-02-20-comb-cov-bin-mpm-quad.py)
     - Values of white noise amplitude computed in [`LIMxCMBL/experiments.py`](LIMxCMBL/experiments.py) 
