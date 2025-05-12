@@ -1,26 +1,15 @@
 #!/bin/bash
 acc="kipac:kipac"
-partition="ampere"
-time_limit="2:00:00"
-
-
+partition="ada"
+time_limit="8:00:00"
 mem_per_node="128G"
 
 date=$(date +%Y-%m-%d)
 
-
-
-#80 iteration/s
-#24hr -> 86400 secs
-#-> 6912000 in 24hr
-#for n_runs in $(seq 6912000 6912009); do
-for n_runs in  $(seq 144000 144100); do
-#for n_runs in $(seq 5 5); do
-  job_name="015.002-${n_runs}"
+for n_runs in $(seq 7560000 7560030); do
+  job_name="015.005-${n_runs}"
     sbatch << EOF
 #!/bin/bash
-
-
 
 #SBATCH --job-name=${job_name}
 #SBATCH --account=${acc}
@@ -32,7 +21,7 @@ for n_runs in  $(seq 144000 144100); do
 #SBATCH --mem=${mem_per_node}
 #SBATCH --gpus=1
 
-python 015.002.2025-05-08.toy-model-gpu.py ${n_runs}
+python 015.005.2025-05-10-binned-mc.py ${n_runs}
 
 EOF
     echo ${job_name}

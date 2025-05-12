@@ -1,6 +1,10 @@
 import sys
 n_runs = int(sys.argv[1])
 
+#temporary patch because slurm killing my jobs...
+n_runs -= 6912000
+n_runs += 1000000
+
 
 # In[2]:
 
@@ -84,7 +88,7 @@ P1Dk[0] = 0.0 #fix mean
 P1Dk = jnp.array(P1Dk)
 
 # set up log space k bins
-n_k_bins = 25
+n_k_bins = 50
 k_bin_edges = np.hstack([[0], np.logspace(np.log10(2*jnp.pi/L), np.log10(jnp.pi/dchi), n_k_bins)])
 k_bin_edges = jnp.array(k_bin_edges)
 k_bin_centers = jnp.sqrt(k_bin_edges[1:]*k_bin_edges[:-1])
@@ -500,7 +504,7 @@ for _type in process:
 
 
 
-for run in trange(n_runs):
+for run in range(n_runs): #trange made huge logs files...
     new_key, subkey = jax.random.split(key)
     del key
     
