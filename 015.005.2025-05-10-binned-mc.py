@@ -1,12 +1,6 @@
 import sys
 n_runs = int(sys.argv[1])
 
-#tmp patch because I need to prod before binning the II
-#and doing things correctly makes things slow
-n_runs -= 7560010
-n_runs += 2880
-#########
-
 oup_mc_fname = '/sdf/scratch/kipac/delon/toy_model_LIMxCMBL/monte_carlo_toy_model_nrun_%d.pkl'%(n_runs)
 print(oup_mc_fname)
 
@@ -109,8 +103,8 @@ def get_fields(key):
     I_x_noLC = KIbar * delta_m_x
     I_k_noLC = jnp.fft.fft(I_x_noLC) * dchi
 
-    IIstar = I_k.reshape(-1, 1) * jnp.conj(I_k).reshape(1, -1)
-    IIstar_noLC = I_k_noLC.reshape(-1, 1) * jnp.conj(I_k_noLC).reshape(1, -1)
+#    IIstar = I_k.reshape(-1, 1) * jnp.conj(I_k).reshape(1, -1)
+#    IIstar_noLC = I_k_noLC.reshape(-1, 1) * jnp.conj(I_k_noLC).reshape(1, -1)
 
     
 
@@ -118,20 +112,20 @@ def get_fields(key):
             bin_Ik_vmapped(_idx_bins, I_k), 
             bin_Ik_vmapped(_idx_bins, I_k_noLC), 
             delta_m_k, 
-            delta_m_x, 
-            bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), IIstar), 
-            bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), IIstar_noLC))
+            delta_m_x,)
+            #bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), IIstar), 
+            #bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), IIstar_noLC))
 
 
 @jax.jit
 def get_observable(key):
-    kappa, I_k, I_k_noLC, delta_m_k, delta_m_x, IIstar, IIstar_noLC = get_fields(key)
+    kappa, I_k, I_k_noLC, delta_m_k, delta_m_x = get_fields(key)
     
     return [kappa**2, 
             kappa*I_k, 
             kappa*I_k_noLC, 
-            IIstar,
-            IIstar_noLC,]
+            I_k.reshape(-1, 1) * jnp.conj(I_k).reshape(1, -1),
+            I_k_noLC.reshape(-1, 1) * jnp.conj(I_k_noLC).reshape(1, -1),]
 
 # In[7]:
 
@@ -158,7 +152,7 @@ for _type in process:
 # In[8]:
 
 
-for run in trange(n_runs):
+for run in range(n_runs):
     new_key, subkey = jax.random.split(key)
     del key
     

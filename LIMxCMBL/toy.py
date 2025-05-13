@@ -125,22 +125,29 @@ binned_Ik_kappa =      bin_Ik_vmapped(jnp.arange(n_k_bins), expected_Ik_kappa)
 binned_Ik_kappa_noLC = bin_Ik_vmapped(jnp.arange(n_k_bins), expected_Ik_kappa_noLC)
 
 # <I I*>
+
 _ks = ks[sort_idx]
-KI_k = KI_k[sort_idx]
+_ks = jnp.hstack([_ks, jnp.abs(_ks[0])])
+
+_KI_k = KI_k[sort_idx]
+_KI_k = jnp.hstack([_KI_k, jnp.conj(_KI_k[0])])
+
+period = 2 * jnp.pi / dchi
+
 
 @jax.jit
 def compute_element(k, kp):
     interp_k = jnp.interp(
         x=k - ks,
         xp=_ks,
-        fp=KI_k,
-        left=0, right=0)
+        fp=_KI_k,
+        period=period)
     interp_kp = jnp.interp(
         x=kp - ks,
         xp=_ks,
-        fp=jnp.conj(KI_k),
-        left=0, right=0)
-    result = jnp.sum(interp_k * interp_kp * P1Dk, axis=-1)
+        fp=jnp.conj(_KI_k),
+        period=period)
+    result = jnp.sum(interp_k * interp_kp * P1Dk)
     return result / L
     
 expected_II = jax.vmap(
@@ -150,19 +157,21 @@ expected_II = jax.vmap(
     ),
     in_axes=(0, None)
 )(ks, ks)
-
-# <I I*> no LC
-expected_II_noLC = L * jnp.diag(KIbar**2 * P1Dk)
-
 cov = expected_kappa2 * expected_II + expected_Ik_kappa.reshape(-1, 1) * jnp.conj(expected_Ik_kappa).reshape(1, -1)
+
+
+expected_II_noLC = L * jnp.diag(KIbar**2 * P1Dk)
 cov_noLC = (expected_kappa2 * expected_II_noLC 
             + expected_Ik_kappa_noLC.reshape(-1, 1) 
             * jnp.conj(expected_Ik_kappa_noLC).reshape(1, -1))
 
-expected_binned_II =      bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), expected_II)
-expected_binned_II_noLC = bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), expected_II_noLC)
+#expected_binned_II = jnp.load('data/toy_expected_binned_II.npy')
+#expected_binned_cov = expected_binned_II * expected_kappa2 + binned_Ik_kappa.reshape(-1, 1) * jnp.conj(binned_Ik_kappa).reshape(1, -1)
 
-expected_binned_cov =      bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), cov)
+expected_binned_II = bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), expected_II)
+expected_binned_cov = bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), cov)
+
+expected_binned_II_noLC = bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), expected_II_noLC)
 expected_binned_cov_noLC = bin_cov_vmapped(jnp.arange(n_k_bins), jnp.arange(n_k_bins), cov_noLC)
 
 
