@@ -111,11 +111,25 @@ bin_cov_vmapped = jax.vmap(
 )
 
 # Theory spectra
-expected_Ik_kappa = 1/L * jnp.sum((jnp.interp(x = ks.reshape(-1, 1) 
-                                              - ks.reshape(1, -1),
-                                              xp = ks[sort_idx],
-                                              fp = KI_k[sort_idx],
-                                              left = 0, right = 0) 
+_ks = ks[sort_idx]
+_ks = jnp.hstack([_ks, jnp.abs(_ks[0])])
+
+_KI_k = KI_k[sort_idx]
+_KI_k = jnp.hstack([_KI_k, jnp.conj(_KI_k[0])])
+
+period = 2 * jnp.pi / dchi
+
+@jax.jit
+def f_KI_k(k):
+    return jnp.interp(
+            x=k,
+            xp=_ks,
+            fp=_KI_k,
+            period=period)
+
+
+
+expected_Ik_kappa = 1/L * jnp.sum((f_KI_k(ks.reshape(-1, 1) - ks.reshape(1, -1))
                                    * (Kkappa_k*P1Dk).reshape(1, -1)), 
                                   axis = -1)
 expected_Ik_kappa_noLC = KIbar*Kkappa_k*P1Dk
@@ -125,29 +139,9 @@ binned_Ik_kappa =      bin_Ik_vmapped(jnp.arange(n_k_bins), expected_Ik_kappa)
 binned_Ik_kappa_noLC = bin_Ik_vmapped(jnp.arange(n_k_bins), expected_Ik_kappa_noLC)
 
 # <I I*>
-
-_ks = ks[sort_idx]
-_ks = jnp.hstack([_ks, jnp.abs(_ks[0])])
-
-_KI_k = KI_k[sort_idx]
-_KI_k = jnp.hstack([_KI_k, jnp.conj(_KI_k[0])])
-
-period = 2 * jnp.pi / dchi
-
-
 @jax.jit
 def compute_element(k, kp):
-    interp_k = jnp.interp(
-        x=k - ks,
-        xp=_ks,
-        fp=_KI_k,
-        period=period)
-    interp_kp = jnp.interp(
-        x=kp - ks,
-        xp=_ks,
-        fp=jnp.conj(_KI_k),
-        period=period)
-    result = jnp.sum(interp_k * interp_kp * P1Dk)
+    result = jnp.sum(f_KI_k(k-ks) * jnp.conj(f_KI_k(kp - ks)) * P1Dk)
     return result / L
     
 expected_II = jax.vmap(
