@@ -1,16 +1,16 @@
 #!/bin/bash
 acc="kipac:default"
-partition="ada"
-ngpu=10
-time_limit="8:00:00"
+partition="ampere"
+ngpu=4
+time_limit="168:00:00"
 
-mem_per_node="32G"
+mem_per_node="64G"
 
 
 
 
 date=$(date +%Y-%m-%d)
-nb=100
+nb=15
 
 
 input_file="LIMxCMBL/experiments.txt"
@@ -20,8 +20,10 @@ while IFS= read -r line; do
       fi
       
       read -r name line zmin zmax lm <<< "$line"
-for lambda_idx in $(seq ${lm} 24); do
-  for midx in $(seq 0 1010 5049); do
+#for lambda_idx in $(seq ${lm} 24); do
+for lambda_idx in $(seq 24 -1 ${lm}); do
+#  for midx in $(seq 0 1010 5049); do
+  for midx in $(seq 0 40 119); do
     job_name="${acc}-${partition}-010.023-comb-${name}-${lambda_idx}-${zmin}-${zmax}-${nb}-${midx}"
     sbatch << EOF
 #!/bin/bash
@@ -45,10 +47,11 @@ run_task_on_gpu() {
 
 declare -a pids=()
 
-for i in {0..1009}; do
-  read a b <<< "\$(python 010.023-03-21-aux.py \$((${midx}+i)))"
+for i in {0..39}; do
+  read a b <<< "\$(python 010.023-03-21-aux.py \$((${midx}+i)) ${nb})"
   gpu_index=\$(((${midx}+i) % ${ngpu}))
 
+  echo ${lambda_idx} ${nb} \${a} \${b} ${zmin} ${zmax} ${line}
   run_task_on_gpu \$gpu_index ${lambda_idx} ${nb} \${a} \${b} ${zmin} ${zmax} ${line}
 
   pids+=(\$!)

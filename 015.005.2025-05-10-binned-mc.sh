@@ -1,12 +1,12 @@
 #!/bin/bash
-acc="kipac:kipac"
+acc="kipac:default"
 partition="ampere"
 time_limit="3:00:00"
 mem_per_node="128G"
 
 date=$(date +%Y-%m-%d)
 
-for n_runs in $(seq 1560098 1560183); do
+for n_runs in $(seq 1560702 1560984); do
   job_name="015.005-${n_runs}"
     sbatch << EOF
 #!/bin/bash

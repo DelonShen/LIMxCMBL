@@ -12,6 +12,7 @@ zmax = float(sys.argv[6])
 
 line_str = sys.argv[7]
 print(line_str)
+print('SPHEREx small')
 
 #oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
 oup_fname = '/sdf/scratch/kipac/delon/I_auto/comb_'
