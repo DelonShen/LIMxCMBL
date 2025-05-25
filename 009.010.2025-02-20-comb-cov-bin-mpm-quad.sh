@@ -5,9 +5,9 @@ lambda_idxs = np.arange(25)[12:][::-1]
 print("\n".join(map(str, lambda_idxs)))
 ')
 
-nbins=100
-zmin=1
-zmax=1.3
+nbins=15
+zmin=5.2
+zmax=8
 readarray -t lambda_idxs <<< "$lambda_values"
 
 date=$(date +%Y-%m-%d)

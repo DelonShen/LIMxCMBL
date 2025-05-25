@@ -23,12 +23,6 @@ ClKK = d_chib_integral(f_WkD, f_WkD) #[Mpc]^2
 
 # beam=1.4, noise=7
 from scipy.interpolate import interp1d
-N0_ells = np.logspace(1, np.log10(5000), 500)
-with open('LIMxCMBL/N0.npy', 'rb') as f:
-    N0 = np.load(f)
-    
-f_N0 = interp1d(x = N0_ells, y = N0)
-
 
 # if no high pass IKappa
 from  LIMxCMBL.kernels import *

@@ -19,4 +19,6 @@ Once the inner integral is tabulate we can compute relevant spectra:
 
 The noise spectra for CMB lensing, stored in `data/N0_*`, is assumed to be only $N^{(0)}$ which we tabulate using [LensQuEst](https://github.com/DelonShen/LensQuEst).
 
-With all the ingrediants in place, the SNR is computed for all experiments/lines in `[011.006+]`
+The signal-to-noise calculation in [`011.007.2025-05-01-SNR-calc.py`](011.007.2025-05-01-SNR-calc.py) assembles all these pieces to compute the SNR for different amounts of foreground filtering.
+
+Numerics for the toy model can be found in [`015.*`] and code to generate components of the summary visualization can be found in [`016.*`].
