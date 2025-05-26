@@ -1,5 +1,3 @@
-#basically this script computes d(SNR^2)/N_ell
-
 from LIMxCMBL.init import *
 from scipy.integrate import simpson, trapezoid
 import pickle
@@ -14,6 +12,10 @@ if(full_sky):
     _oup_fname += '_full_sky_'
 
 for experiment in experiments:
+    n_bins = 100
+    if(experiment == 'SPHEREx'):
+        n_bins = 15
+
     zmin = experiments[experiment]['zmin']
     zmax = experiments[experiment]['zmax']
     line_str = experiments[experiment]['line_str']
@@ -47,7 +49,6 @@ for experiment in experiments:
     print('White noise[kJy2 Mpc3 / sr2]: %.1f'%Pei)
     print('ell sensitivity: %.1f to %.1f'%(ell_fundamental, ell_max_survey))
     
-    n_bins = 100
     chi_bin_edges = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_bins + 1)
     chi_bin_centers = (chi_bin_edges[1:] + chi_bin_edges[:-1])/2
     dchi_binned = np.mean(np.diff(chi_bin_edges))
@@ -104,6 +105,7 @@ for experiment in experiments:
     from LIMxCMBL.noise import f_eIeI
     cov  = np.einsum('l  , xy->lxy', (ClKK + f_N0(ells)),  Pei * np.diag(f_eIeI(chi=chi_bin_centers, dchi=dchi_binned, Lambda=0)))
     cov = cov.astype(np.float64)
+    print(cov.shape)
     
     SNR2_per_mode_noise_dom[0.0] = np.zeros_like(ells)
     for ell_idx in range(len(ells)):
@@ -113,13 +115,15 @@ for experiment in experiments:
         SNR2_per_mode_noise_dom[0.0][ell_idx] = np.dot(I_kappa[ell_idx], x)
     
     
-    LIDXs = [18, 24]
-    if(experiment == 'CHIME'):
-        LIDXs[0] = 19
-
-    for Lambda_idx in LIDXs:
+    burn = 0
+    for Lambda_idx in range(25):
         Lambda = Lambdas[Lambda_idx]
-        print(Lambda)
+        if(Lambda < 2 * np.pi/(chimax-chimin)):
+            continue
+        if(burn == 0): #Lambda ~ fundamental is sketchy
+            burn += 1
+            continue
+        print(Lambda_idx)
 
 
         IHi_kappa_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/'

@@ -36,6 +36,7 @@ experiments['COMAP']['Omega_pix'] = (4.5 * u.arcmin)**2 / (8 * np.log(2))
 experiments['SPHEREx']['Omega_pix'] = (6 * u.arcsec)**2
 experiments['HETDEX']['Omega_pix']  = (3 * u.arcsec)**2 #2110.04298
 #2201.07869 says CHIME's angular resolution is ~40'
+#the relation to our noise model is approx OmegA_pix = Omega_beam single antenna / Nant
 experiments['CHIME']['Omega_pix']  = (40*u.arcmin)**2
 
 

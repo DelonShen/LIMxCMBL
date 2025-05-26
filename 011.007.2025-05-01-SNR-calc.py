@@ -14,6 +14,12 @@ if(full_sky):
     _oup_fname += '_full_sky_'
 
 for experiment in experiments:
+    n_bins = 100
+    if(experiment == 'SPHEREx'):
+        n_bins = 15
+    else:
+        continue
+
     zmin = experiments[experiment]['zmin']
     zmax = experiments[experiment]['zmax']
     line_str = experiments[experiment]['line_str']
@@ -47,7 +53,6 @@ for experiment in experiments:
     print('White noise[kJy2 Mpc3 / sr2]: %.1f'%Pei)
     print('ell sensitivity: %.1f to %.1f'%(ell_fundamental, ell_max_survey))
     
-    n_bins = 100
     chi_bin_edges = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_bins + 1)
     chi_bin_centers = (chi_bin_edges[1:] + chi_bin_edges[:-1])/2
     dchi_binned = np.mean(np.diff(chi_bin_edges))

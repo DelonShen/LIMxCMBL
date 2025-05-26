@@ -1,5 +1,3 @@
-#basically this script computes d(SNR^2)/N_ell
-
 from LIMxCMBL.init import *
 from scipy.integrate import simpson, trapezoid
 import pickle
@@ -10,7 +8,17 @@ from LIMxCMBL.experiments import *
 N0_fname = 'N0_so'
 _oup_fname = '/scratch/users/delon/LIMxCMBL/SNR_011.008_'+N0_fname+'_'
 
+
+
+SNR_detect = 5
+
 for experiment in experiments:
+    n_bins = 100
+    if(experiment == 'SPHEREx'):
+        n_bins = 15
+    else:
+        continue
+
     zmin = experiments[experiment]['zmin']
     zmax = experiments[experiment]['zmax']
     line_str = experiments[experiment]['line_str']
@@ -42,7 +50,6 @@ for experiment in experiments:
     print('White noise[kJy2 Mpc3 / sr2]: %.1f'%Pei)
     print('ell sensitivity: %.1f to %.1f'%(ell_fundamental, ell_max_survey))
     
-    n_bins = 100
     chi_bin_edges = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_bins + 1)
     chi_bin_centers = (chi_bin_edges[1:] + chi_bin_edges[:-1])/2
     dchi_binned = np.mean(np.diff(chi_bin_edges))
@@ -110,7 +117,6 @@ for experiment in experiments:
     _Lambdas = np.array(sorted(list(SNR2_per_mode_full.keys())))
 
 
-    SNR_detect = 10
     full_y = np.zeros(len(_Lambdas))
     
     for i,Lambda in enumerate(_Lambdas):

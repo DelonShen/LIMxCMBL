@@ -13,6 +13,7 @@ zmin = float(sys.argv[4])
 zmax = float(sys.argv[5])
 
 line_str = sys.argv[6]
+ell_idx = int(sys.argv[7])
 
 chimin = ccl.comoving_angular_distance(cosmo, 1/(1+zmin))
 chimax = ccl.comoving_angular_distance(cosmo, 1/(1+zmax))
@@ -22,15 +23,14 @@ dchi_binned = np.mean(np.diff(chi_bin_edges))
 
 
 oup_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/'
-oup_fname += '%s_IHik_zmin_%.1f_zmax_%.1f_idx_%d_dblquad_n_bins_%d_curr_%d.npy'%(line_str,
+oup_fname += '%s_IHik_zmin_%.1f_zmax_%.1f_idx_%d_dblquad_n_bins_%d_curr_%d_ell_idx_%d.npy'%(line_str,
                                                                                  zmin, 
                                                                                  zmax, 
                                                                                  Lambda_idx, 
                                                                                  nbins, 
-                                                                                 curr_bin)
+                                                                                 curr_bin,
+                                                                                           ell_idx)
 print(oup_fname)
-
-
 
 # get CMB lensing component
 from LIMxCMBL.kernels import get_f_Kkappa
@@ -63,7 +63,8 @@ from scipy.integrate import quad, quad_vec, trapezoid
 inner_dkparp_integral = np.load('/oak/stanford/orgs/kipac/users/delon/LIMxCMBL/inner_dkparp_integral.npy')
 inner_dkparp_integral = inner_dkparp_integral.astype(np.float64)
 
-f_inner_integral = interp1d(x = chibs, y = inner_dkparp_integral, axis = 1)
+
+f_inner_integral = interp1d(x = chibs, y = inner_dkparp_integral[ell_idx], axis = 0)
 
 from scipy.interpolate import interp1d, interp2d, LinearNDInterpolator
 
@@ -74,63 +75,65 @@ for i in range(len(chibs)):
     for j in range(len(deltas)):
         tmp_chibs += [chibs[i]]
         tmp_log_deltas += [np.log(deltas[j])]
-        tmp_fnctn += [inner_dkparp_integral[:,i,j]]
+        tmp_fnctn += [inner_dkparp_integral[ell_idx,i,j]]
         
 f_inner_integral_2d = LinearNDInterpolator(list(zip(tmp_chibs, tmp_log_deltas)), tmp_fnctn)
 
-def get_f_KILo(external_chi, Lambda):
-    prefactor = Lambda / np.pi #units 1/cMpc
-    return lambda chi : prefactor * f_KLIM(chi) * np.sinc(Lambda * (external_chi - chi) / np.pi)
-
-def bin_integrand(chi):
-    f_KLIMLo = get_f_KILo(external_chi = chi, Lambda=Lambda)
-    f_KLIMLo_windowed = apply_window(f_K = f_KLIMLo,
-                                     chimin = chimin,
-                                     chimax = chimax)
+def f_KILo(chi, external_chi, Lambda):
+    return (Lambda / np.pi 
+            * np.interp(x = chi, xp = chis, 
+                         fp = _KI, left = 0, right = 0) 
+            * np.sinc(Lambda * (external_chi - chi) / np.pi))
+def bin_integrand(_chib, chi):
+    
     _curr_KI = 2 * np.interp(x = chi, xp = chis, fp = _KI, left = 0, right = 0)
     
     
-    def integrand(_chib):
-        #Low passed
-        plus = _chib*(1+deltas)
-        mins = _chib*(1-deltas)
+    #inner integrand
+    #Low passed
+    plus = _chib*(1+deltas)
+    mins = _chib*(1-deltas)
 
-        _interm  = f_KLIMLo_windowed(plus) * f_Kkappa(mins)
-        _interm += f_KLIMLo_windowed(mins) * f_Kkappa(plus) 
+    _interm  = np.where((plus >= chimin) & (plus <= chimax),
+                        f_KILo(plus, external_chi = chi, Lambda=Lambda) 
+                        * np.interp(x = mins, xp = chis, fp = Wk * Dz, left = 0, right = 0),
+                        0)
+    _interm += np.where((mins >= chimin) & (mins <= chimax),
+                        f_KILo(mins, external_chi = chi, Lambda=Lambda) 
+                        * np.interp(x = plus, xp = chis, fp = Wk * Dz, left = 0, right = 0),
+                        0)
+    _factor = (2 / _chib)
+    _factor = _factor * deltas
+    _factor *= f_inner_integral(_chib)
 
-        _factor = (2 / _chib)
-        _factor = _factor * deltas
-        _factor = np.einsum('d, ld->ld', _factor, f_inner_integral(_chib))
+    _interm  *= _factor
 
-        _interm  = np.einsum('d,ld->ld', _interm, _factor)
+    LO_integrand = trapezoid(x = np.log(deltas), y = _interm, axis=-1)
 
-        LO_integrand = trapezoid(x = np.log(deltas), y = _interm, axis=-1)
-        
-        #unfiltered
-        _delta = np.abs(1 - chi / _chib)
-        _delta = np.where(_delta < 1e-6, 1e-6,
-                         np.where(_delta > 0.7, 
-                                 0.7,
-                                 _delta))
-        unfiltered_integrand = (_curr_KI 
-                                * np.interp(x = 2*_chib - chi, 
-                                            xp = chis, fp = Wk * Dz, 
-                                            left = 0, right = 0)
-                                * f_inner_integral_2d((_chib, np.log(_delta))) 
-                                / _chib**2)
-        
-        return unfiltered_integrand - LO_integrand
+    #unfiltered
+    _delta = np.abs(1 - chi / _chib)
+    _delta = np.where(_delta < 1e-6, 1e-6,
+                     np.where(_delta > 0.7, 
+                             0.7,
+                             _delta))
+    unfiltered_integrand = (_curr_KI 
+                            * np.interp(x = 2*_chib - chi, 
+                                        xp = chis, fp = Wk * Dz, 
+                                        left = 0, right = 0)
+                            * f_inner_integral_2d((_chib, np.log(_delta))) 
+                            / _chib**2)
 
-    res, _ = quad_vec(integrand, 10, chimax_sample, epsrel = 1e-3, epsabs =0.0)
-    return res
+    return unfiltered_integrand - LO_integrand
 
-from scipy.integrate import quad_vec
+from scipy.integrate import nquad
 left = chi_bin_edges[curr_bin]
 right = chi_bin_edges[curr_bin + 1]
-print(left, right)
 
-print('starting quad_vec')
-res, _ = quad_vec(bin_integrand, left, right, epsabs =0, epsrel=1e-3, workers=32)#-1)
+options={'limit':100000, 'epsabs':0.0, 'epsrel':1e-3}
+
+res, _ = nquad(bin_integrand, [[10,chimax_sample],[left, right]],
+               opts=[options,options])
+
 res /= dchi_binned
 
 np.save(oup_fname, res)
