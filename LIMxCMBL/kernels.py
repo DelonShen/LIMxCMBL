@@ -291,7 +291,7 @@ HI_integrand_bias = np.einsum('zm, zm, zm -> zm', nmvec, L_HI, bvec)
 integrand_HI = np.einsum('zm, zm ->zm', nmvec, L_HI)
 
 L_HI_z = simps(y=integrand_HI, x=np.log10(Ms), axis=-1) * u.Lsun / (u.Mpc)**3
-#bL_HI_avg = simps(y=HI_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_HI_z
+bL_HI_avg = simps(y=HI_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc)**3)/ L_HI_z
 
 
 Hzbit_HI = cu.c / (4*np.pi * u.sr * (Hzs*u.km/u.s/u.Mpc) * nu_HI)
