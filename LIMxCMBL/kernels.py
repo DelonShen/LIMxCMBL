@@ -187,7 +187,7 @@ def get_f_KI():
 def get_window(chimin, chimax):
     _window = np.zeros_like(chis)
     _window[(chis > chimin) & (chis < chimax)] = 1
-    return interp1d(chis, _window, fill_value = 'extrapolate')
+    return interp1d(chis, _window, fill_value = 0, bounds_error = False)
 
 def apply_window(f_K, chimin, chimax):
     f_window = get_window(chimin, chimax)
@@ -300,3 +300,14 @@ KI_HI = Dz*(simps(y=HI_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc
 
 
 
+
+
+# DFT low pass
+def lo_DFT(alpha, chimin, chimax, m):
+    _L = chimax - chimin
+    
+    return np.where(
+        (np.abs((np.abs(alpha)-_L) / _L) < 0.001) | (np.abs(alpha / _L) < 0.001),
+        (1 + 2 * m) / _L,
+        np.sin(np.pi/_L * alpha * (1 + 2 * m)) / np.sin(np.pi/_L * alpha) * 1/_L
+    )
