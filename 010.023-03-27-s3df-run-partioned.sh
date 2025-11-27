@@ -1,7 +1,18 @@
 #!/bin/bash
-acc="kipac:default"
+#nb=100
+nb=15 #SPHEREx
+
+#mli:defualt has turing (? gpu) or ampere (4 gpu)
+#kipac:default ampere (4 gpu)
+#kipac:kipac ada (5 gpu)
+#mli:cmb-ml has turing (10 gpu) or ampere (4gpu)
+#but I think turing GPU not enough memory
+
+#ngpu=10 #turing
+ngpu=4 #ampere
+
+acc="mli:cmb-ml"
 partition="ampere"
-ngpu=4
 time_limit="168:00:00"
 
 mem_per_node="64G"
@@ -10,7 +21,7 @@ mem_per_node="64G"
 
 
 date=$(date +%Y-%m-%d)
-nb=15
+
 
 
 input_file="LIMxCMBL/experiments.txt"
@@ -18,12 +29,17 @@ while IFS= read -r line; do
       if [ -z "$line" ]; then
           continue
       fi
-      
-      read -r name line zmin zmax lm <<< "$line"
-#for lambda_idx in $(seq ${lm} 24); do
-for lambda_idx in $(seq 24 -1 ${lm}); do
-#  for midx in $(seq 0 1010 5049); do
-  for midx in $(seq 0 40 119); do
+      read -r name line zmin zmax l0 l1 l2 l3 l4 <<< "$line"
+
+
+
+for lambda_idx in $l4 $l3 $l2 $l1 $l0; do
+#  step=101
+  step=40 #for 15 bins
+
+#  for midx in $(seq 0 ${step} 5049); do # for 100 bins
+#  for midx in $(seq 0 51 1274); do # for 50 bins
+  for midx in $(seq 0 ${step} 119); do # for 15 bins
     job_name="${acc}-${partition}-010.023-comb-${name}-${lambda_idx}-${zmin}-${zmax}-${nb}-${midx}"
     sbatch << EOF
 #!/bin/bash
@@ -47,7 +63,7 @@ run_task_on_gpu() {
 
 declare -a pids=()
 
-for i in {0..39}; do
+for i in {0..${step}}; do
   read a b <<< "\$(python 010.023-03-21-aux.py \$((${midx}+i)) ${nb})"
   gpu_index=\$(((${midx}+i) % ${ngpu}))
 
