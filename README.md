@@ -1,5 +1,5 @@
 # Overview 
-This repository contains the complete history of numerical calculations for the paper "Direct correlation of line intensity mapping and CMB lensing from lightcone evolution" [[2507.17752]](https://arxiv.org/abs/2507.17752). Sorry for the mess. Specific references to key calculations are outlined below.
+This repository contains the complete history of numerical calculations for the paper "Direct correlation of line intensity mapping and CMB lensing from evolution along the lightcone" [[2507.17752]](https://arxiv.org/abs/2507.17752). Sorry for the mess. Specific references to key calculations are outlined below.
 
 ---
 
