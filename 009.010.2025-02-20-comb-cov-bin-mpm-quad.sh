@@ -25,7 +25,7 @@ mkdir -p ${output_dir}
 date=$(date +%Y-%m-%d)
 
 
-nbins=100
+nbins=15
 input_file="LIMxCMBL/experiments.txt"
 while IFS= read -r line; do
       if [ -z "$line" ]; then

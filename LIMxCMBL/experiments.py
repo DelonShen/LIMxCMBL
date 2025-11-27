@@ -25,7 +25,8 @@ with open('LIMxCMBL/_experiments.txt') as f:
         experiments[_data[0]]['line_str'] = _data[1]
         experiments[_data[0]]['zmin'] = float(_data[2])
         experiments[_data[0]]['zmax'] = float(_data[3])
-        experiments[_data[0]]['Omega_field'] = (float(_data[5]) * u.deg**2).to(u.rad**2) #rad^2
+        experiments[_data[0]]['Omega_field'] = (float(_data[4]) * u.deg**2).to(u.rad**2) #rad^2
+        experiments[_data[0]]['Lambda_idxs'] = np.array(_data[5:], dtype=np.int32)
 
 
 #2011.08193 table 1.
@@ -142,7 +143,7 @@ def CHIME_Pei(Ofield = experiments['CHIME']['Omega_field'],
     nurest = cu.c/(21.106114054160 * u.cm)
     dnu = (800 * u.MHz - 400 * u.MHz)/(256 * 4)
 
-    nuobs = np.linspace(617, 710,1000) * u.MHz
+    nuobs = np.linspace(400, 800,1000) * u.MHz
     lobs = cu.c/nuobs
     zobs = (nurest /nuobs - 1).si
 
@@ -192,3 +193,17 @@ Pei_dict = {
 
 for _e in experiments:
     experiments[_e]['f_Pei'] = Pei_dict[_e]
+
+
+m1_idxs = {}
+m1_idxs['CCAT-prime'] = 15
+m1_idxs['COMAP'] = 17
+m1_idxs['SPHEREx'] = 17
+m1_idxs['HETDEX'] = 16
+m1_idxs['CHIME'] = 14
+m2_idxs = {}
+m2_idxs['CCAT-prime'] = 17
+m2_idxs['COMAP'] = 19
+m2_idxs['SPHEREx'] = 19
+m2_idxs['HETDEX'] = 18
+m2_idxs['CHIME'] = 16

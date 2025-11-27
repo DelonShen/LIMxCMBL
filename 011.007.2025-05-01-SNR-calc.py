@@ -13,12 +13,23 @@ full_sky = False
 if(full_sky):
     _oup_fname += '_full_sky_'
 
+noLC = False
+if(noLC):
+    print('no lightcone')
+    _oup_fname += '_noLC_'
+
+
+
+LIMBER = True
+if(LIMBER):
+    print('LIMBER')
+    _oup_fname += '_LIMBER_'
+
+
 for experiment in experiments:
     n_bins = 100
     if(experiment == 'SPHEREx'):
         n_bins = 15
-    else:
-        continue
 
     zmin = experiments[experiment]['zmin']
     zmax = experiments[experiment]['zmax']
@@ -61,7 +72,13 @@ for experiment in experiments:
     I_kappa_fname +='zmin_%.5f_zmax_%.5f_quad_next_%d.npy'%(zmin, 
                                                             zmax, 
                                                             1000)
-    
+
+    if(noLC):
+        I_kappa_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/Ik_'
+        I_kappa_fname +='zmin_%.5f_zmax_%.5f_quad_next_%d_noLC.npy'%(zmin, 
+                                                                zmax, 
+                                                                1000)
+
     I_kappa_unbinned = np.load(I_kappa_fname)
     
     I_kappa = np.zeros((len(ells), n_bins))
@@ -70,6 +87,13 @@ for experiment in experiments:
                 idx1 = np.where((external_chis > l1) & (external_chis <= r1))[0]
                 I_kappa[:,i] = (np.sum(I_kappa_unbinned[:,idx1[0]:idx1[-1]+1,], 
                                      axis=(1)) / len(idx1))
+
+
+    if(LIMBER):
+        I_kappa_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/'
+        I_kappa_fname += '%s_LIMBER_IHik_idx_%d.npy'%(experiment, -1, )
+        I_kappa = np.load(I_kappa_fname)
+
     
     def get_binned(base, n_external = 300):
         external_chis = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_external)
@@ -86,12 +110,17 @@ for experiment in experiments:
         return oup
     
     #get <II>
-    
     I_I_unbinned = np.load('/scratch/users/delon/LIMxCMBL/I_auto/'+
                               'I_auto_n_ext_%d_zmin_%.1f_zmax_%.1f.npy'%(3000, 
                                                                          zmin, 
                                                                          zmax))
     
+    if(noLC):
+        I_I_unbinned = np.load('/scratch/users/delon/LIMxCMBL/I_auto/'+
+                                  'I_auto_n_ext_%d_zmin_%.1f_zmax_%.1f_noLC.npy'%(3000, 
+                                                                             zmin, 
+                                                                             zmax))
+ 
     I_I = get_binned(I_I_unbinned, n_external = 3000)
     
     # get CMB lensing component
@@ -117,7 +146,7 @@ for experiment in experiments:
     
     
     from LIMxCMBL.noise import f_eIeI
-    cov  = np.einsum('l  , xy->lxy', (ClKK + f_N0(ells)),  Pei * np.diag(f_eIeI(chi=chi_bin_centers, dchi=dchi_binned, Lambda=0)))
+    cov  = np.einsum('l  , xy->lxy', (ClKK + f_N0(ells)),  Pei * np.diag(f_eIeI(ls = chi_bin_edges[:-1], rs = chi_bin_edges[1:], dchi = dchi_binned)))
     cov += np.einsum('l  ,lxy->lxy', (ClKK + f_N0(ells)),  I_I)
     cov += np.einsum('lx ,l y->lxy', I_kappa, I_kappa)
     cov = cov.astype(np.float64)
@@ -130,8 +159,7 @@ for experiment in experiments:
         SNR2_per_mode_full[0.0][ell_idx] = np.dot(I_kappa[ell_idx], x)
     
     
-    from LIMxCMBL.noise import f_eIeI
-    cov  = np.einsum('l  , xy->lxy', (ClKK + f_N0(ells)),  Pei * np.diag(f_eIeI(chi=chi_bin_centers, dchi=dchi_binned, Lambda=0)))
+    cov  = np.einsum('l  , xy->lxy', (ClKK + f_N0(ells)),  Pei * np.diag(f_eIeI(ls = chi_bin_edges[:-1], rs = chi_bin_edges[1:], dchi = dchi_binned)))
     cov = cov.astype(np.float64)
     
     SNR2_per_mode_noise_dom[0.0] = np.zeros_like(ells)
@@ -142,14 +170,8 @@ for experiment in experiments:
         SNR2_per_mode_noise_dom[0.0][ell_idx] = np.dot(I_kappa[ell_idx], x)
     
     
-    burn = 0
-    for Lambda_idx in range(25):
+    for Lambda_idx in experiments[experiment]['Lambda_idxs']:
         Lambda = Lambdas[Lambda_idx]
-        if(Lambda < 2 * np.pi/(chimax-chimin)):
-            continue
-        if(burn == 0): #Lambda ~ fundamental is sketchy
-            burn += 1
-            continue
         print(Lambda_idx)
         #IHi_kappa##########################################
         IHi_kappa = np.zeros((100, n_bins))
@@ -162,8 +184,23 @@ for experiment in experiments:
                                                                                              Lambda_idx, 
                                                                                              n_bins, 
                                                                                              curr_bin)
+            if(noLC):
+                oup_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/'
+                oup_fname += '%s_IHik_zmin_%.1f_zmax_%.1f_idx_%d_dblquad_n_bins_%d_curr_%d_noLC.npy'%(line_str,
+                                                                                                 zmin, 
+                                                                                                 zmax, 
+                                                                                                 Lambda_idx, 
+                                                                                                 n_bins, 
+                                                                                                 curr_bin)
             IHi_kappa[:,curr_bin] = np.load(oup_fname)
-    
+
+        if(LIMBER):
+            oup_fname = '/scratch/users/delon/LIMxCMBL/IHiKappa/'
+            oup_fname += '%s_LIMBER_IHik_idx_%d.npy'%(experiment, Lambda_idx, )
+            IHi_kappa = np.load(oup_fname)
+
+
+
     
         ####################################################
         #IHi_IHi############################################
@@ -183,13 +220,22 @@ for experiment in experiments:
     
         ####################################################
         #eHI eHI############################################
-        eComb_fname = '/scratch/users/delon/LIMxCMBL/eHIeHI/mpmath_comb_'
+        eComb_fname = '/scratch/users/delon/LIMxCMBL/eHIeHI/comb_'
         eComb_fname +='zmin_%.5f_zmax_%.5f_Lambda_idx_%.d_from_quad_nbins_%d.npy'%(zmin, 
                                                                                    zmax, 
                                                                                    Lambda_idx, 
                                                                                    n_bins)
+
         eComb = np.load(eComb_fname)
         eHIeHI_binned = eComb
+
+        # argument from rank-nullity and analyzing rank-revealing factorization
+        # that the zeroth eigenvalue should be set to zero and least-sq should be used
+        #eigenvalues, eigenvectors = np.linalg.eig(eHIeHI_binned)
+        #patched_eigenvalues = np.where(eigenvalues < sorted(eigenvalues)[1], 0.0, eigenvalues)
+        #eHIeHI_binned = eigenvectors @ np.diag(patched_eigenvalues) @ eigenvectors.T
+
+
         ####################################################
         #full cov###########################################
         #l -> ells
@@ -202,23 +248,34 @@ for experiment in experiments:
     
         SNR2_per_mode_full[Lambda] = np.zeros_like(ells)
         for ell_idx in range(len(ells)):
-            L = np.linalg.cholesky(cov[ell_idx])
-            y = np.linalg.solve(L, IHi_kappa[ell_idx])
-            x = np.linalg.solve(L.T, y)
+            _cov = cov[ell_idx]
+
+            U, s, Vt = np.linalg.svd(_cov)
+            s_regularized = np.where(np.abs(s) < sorted(np.abs(s))[1], 0.0, s)
+            _cov = U @ np.diag(s_regularized) @ Vt
+
+            x, residuals, rank, s = np.linalg.lstsq(_cov, IHi_kappa[ell_idx], rcond=None)
             SNR2_per_mode_full[Lambda][ell_idx] = np.dot(IHi_kappa[ell_idx], x)
-        ####################################################
+       ####################################################
         #noise-dom cov######################################
         cov  = np.einsum('l  , xy->lxy', (ClKK + f_N0(ells)),  Pei * eHIeHI_binned)
+
         cov = cov.astype(np.float64)
+
         SNR2_per_mode_noise_dom[Lambda] = np.zeros_like(ells)
         for ell_idx in range(len(ells)):
-            L = np.linalg.cholesky(cov[ell_idx])
-            y = np.linalg.solve(L, IHi_kappa[ell_idx])
-            x = np.linalg.solve(L.T, y)
+            #least-sq to handle zero eigenvalues
+
+            _cov = cov[ell_idx]
+
+            U, s, Vt = np.linalg.svd(_cov)
+            s_regularized = np.where(np.abs(s) < sorted(np.abs(s))[1], 0.0, s)
+            _cov = U @ np.diag(s_regularized) @ Vt
+
+            x, residuals, rank, s = np.linalg.lstsq(_cov, IHi_kappa[ell_idx], rcond=None)
             SNR2_per_mode_noise_dom[Lambda][ell_idx] = np.dot(IHi_kappa[ell_idx], x)
         ####################################################
         ####################################################
-
 
     with open(_oup_fname+experiment+'_full.pkl', 'wb') as f:
         print(_oup_fname+experiment+'_full.pkl', 'wb')

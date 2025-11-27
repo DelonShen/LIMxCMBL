@@ -303,11 +303,11 @@ KI_HI = Dz*(simps(y=HI_integrand_bias, x=np.log10(Ms), axis=-1)*(u.Lsun / (u.Mpc
 
 
 # DFT low pass
-def lo_DFT(alpha, chimin, chimax, m):
+def lo_DFT(alpha, chimin, chimax, m, eps = 1e-8):
     _L = chimax - chimin
     
     return np.where(
-        (np.abs((np.abs(alpha)-_L) / _L) < 0.001) | (np.abs(alpha / _L) < 0.001),
+        (np.abs((np.abs(alpha)-_L) / _L) < eps) | (np.abs(alpha / _L) < eps),
         (1 + 2 * m) / _L,
         np.sin(np.pi/_L * alpha * (1 + 2 * m)) / np.sin(np.pi/_L * alpha) * 1/_L
     )

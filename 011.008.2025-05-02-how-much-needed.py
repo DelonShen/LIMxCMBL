@@ -16,8 +16,6 @@ for experiment in experiments:
     n_bins = 100
     if(experiment == 'SPHEREx'):
         n_bins = 15
-    else:
-        continue
 
     zmin = experiments[experiment]['zmin']
     zmax = experiments[experiment]['zmax']

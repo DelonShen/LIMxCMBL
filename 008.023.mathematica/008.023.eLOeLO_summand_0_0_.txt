@@ -1,0 +1,1 @@
+(chimax^2*chimin - chimax*chimin^2)^(-1)

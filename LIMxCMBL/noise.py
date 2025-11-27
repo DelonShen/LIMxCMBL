@@ -14,7 +14,7 @@ from multiprocessing import Pool
 from itertools import product
 from tqdm import tqdm
 import pickle
-mpm.mp.dps = 33;
+mpm.mp.dps = 15;
 
 #load into sympy
 eLOeLO_diag_mathematica = None
@@ -28,6 +28,23 @@ with open('008.008.eLOeLO_off_diag_mathematica.txt', 'r') as f:
     eLOeLO_off_diag_mathematica = f.read()
 eLOeLO_off_diag_mathematica = eLOeLO_off_diag_mathematica.replace('\[Pi]', 'Pi')
 eLOeLO_off_diag_sympy = parse_mathematica(eLOeLO_off_diag_mathematica)
+
+
+#load into sympy
+eLOeLO_diag_no_window_mathematica = None
+with open('008.020.eLOeLO_diag_mathematica.txt', 'r') as f:
+    eLOeLO_diag_no_window_mathematica = f.read()
+eLOeLO_diag_no_window_mathematica = eLOeLO_diag_no_window_mathematica.replace('\[Pi]', 'Pi')
+eLOeLO_diag_no_window_sympy = parse_mathematica(eLOeLO_diag_no_window_mathematica)
+
+eLOeLO_off_diag_no_window_mathematica = None
+with open('008.020.eLOeLO_off_diag_mathematica.txt', 'r') as f:
+    eLOeLO_off_diag_no_window_mathematica = f.read()
+eLOeLO_off_diag_no_window_mathematica = eLOeLO_off_diag_no_window_mathematica.replace('\[Pi]', 'Pi')
+eLOeLO_off_diag_no_window_sympy = parse_mathematica(eLOeLO_off_diag_no_window_mathematica)
+
+
+
 
 
 #turn into mpmath function
@@ -46,6 +63,23 @@ eLOeLO_off_diag_mpmath = lambdify(list(eLOeLO_off_diag_sympy.free_symbols),
                              eLOeLO_off_diag_sympy, modules=modules)
 eLOeLO_diag_mpmath = lambdify(list(eLOeLO_diag_sympy.free_symbols), 
                              eLOeLO_diag_sympy, modules=modules)
+
+eLOeLO_off_diag_no_window_mpmath = lambdify(list(eLOeLO_off_diag_no_window_sympy.free_symbols), 
+                             eLOeLO_off_diag_no_window_sympy, modules=modules)
+eLOeLO_diag_no_window_mpmath = lambdify(list(eLOeLO_diag_no_window_sympy.free_symbols), 
+                             eLOeLO_diag_no_window_sympy, modules=modules)
+
+
+
+def f_eLOeLO_no_window(chi, chip, Lambda):
+    if(chi == chip):
+        return mpm.re(eLOeLO_diag_no_window_mpmath(L = Lambda,
+                                  x = chi))
+
+    return mpm.re(eLOeLO_off_diag_no_window_mpmath(L = Lambda,
+                                  x = chi, xp = chip))
+
+
 
 def f_eLOeLO(chi, chip, chimin, chimax, Lambda):
     if(chi == chip):
@@ -97,7 +131,9 @@ def f_eLOeLO_scipy(chi, chip, chimin, chimax, Lambda):
 
 
 
-f_eIeI = lambda chi, dchi, Lambda : 1 / (dchi * chi ** 2)
+#f_eIeI = lambda chi, dchi, Lambda : 1 / (dchi * chi ** 2) #actually this may be wrong
+
+f_eIeI = lambda ls, rs, dchi : 1 / dchi**2 * (1 / ls - 1 / rs)
 f_cross = lambda chi, chip, Lambda : (1/chi**2  * Lambda / np.pi * np.sinc(Lambda * (chi - chip) / np.pi)
                               + 1/chip**2 * Lambda / np.pi * np.sinc(Lambda * (chi - chip) / np.pi))
 

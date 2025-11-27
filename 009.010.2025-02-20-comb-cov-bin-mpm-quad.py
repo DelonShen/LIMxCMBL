@@ -29,11 +29,6 @@ from  LIMxCMBL.kernels import *
 f_KLIM   = get_f_KI()
 f_Kkappa = get_f_Kkappa()
 
-f_KLIM_windowed = apply_window(f_K = f_KLIM,
-                               chimin = chimin,
-                               chimax = chimax)
-
-
 oup_fname = '/scratch/users/delon/LIMxCMBL/eHIeHI/mpmath_comb_zmin_%.5f_zmax_%.5f_Lambda_idx_%.d_from_quad_nbins_%d.npy'%(zmin, zmax, Lambda_idx, nbins)
 print(oup_fname)
 
@@ -55,8 +50,8 @@ def compute_bin_element(params):
     
     integrand = lambda x, xp: (f_eLOeLO(chi=x,
                                         chip=xp,
-                                        chimin=chimin,
-                                        chimax=chimax,
+                                        chimin=1,#chimin,
+                                        chimax=chimax_sample*10,#chimax,
                                         Lambda=Lambda)
                                - f_cross_mpm(x, xp, Lambda=Lambda))
 
