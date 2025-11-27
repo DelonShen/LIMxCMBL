@@ -1,4 +1,7 @@
 #!/bin/bash
+nb=100
+#nb=15 #SPHEREx
+
 acc="kipac:kipac"
 partition="ada"
 ngpu=5
@@ -11,7 +14,9 @@ mem_per_node="32G"
 
 
 date=$(date +%Y-%m-%d)
-nb=100
+
+ntot=$(( ( nb * (nb + 1) / 2 ) -1))
+echo ${ntot}
 
 
 input_file="LIMxCMBL/experiments.txt"
@@ -19,7 +24,8 @@ while IFS= read -r line; do
       if [ -z "$line" ]; then
           continue
       fi
-      read -r name line zmin zmax lm <<< "$line"
+      read -r name line zmin zmax l0 l1 l2 l3 l4 <<< "$line"
+      
 
     job_name="${acc}-${partition}-010.023-comb-${name}-${zmin}-${zmax}-${nb}"
     sbatch << EOF
@@ -45,9 +51,10 @@ run_task_on_gpu() {
 
 declare -a pids=()
 
-for lambda_idx in \$(seq 24 -1 ${lm}); do
-  for i in \$(seq 0 5049); do
-      read a b <<< "\$(python 010.023-03-21-aux.py \$((i)))"
+
+for lambda_idx in ${l0} ${l1} ${l2} ${l3} ${l4}; do
+  for i in \$(seq 0 ${ntot}); do
+      read a b <<< "\$(python 010.023-03-21-aux.py \$((i)) ${nb})"
       gpu_index=\$((i % ${ngpu}))
       run_task_on_gpu \$gpu_index \${lambda_idx} ${nb} \${a} \${b} ${zmin} ${zmax} ${line}
       

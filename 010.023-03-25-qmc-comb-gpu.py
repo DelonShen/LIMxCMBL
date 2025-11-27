@@ -11,8 +11,6 @@ zmin = float(sys.argv[5])
 zmax = float(sys.argv[6])
 
 line_str = sys.argv[7]
-print(line_str)
-print('SPHEREx small')
 
 #oup_fname = '/scratch/users/delon/LIMxCMBL/I_auto/comb_'
 oup_fname = '/sdf/scratch/kipac/delon/I_auto/comb_'
@@ -44,6 +42,10 @@ import jax.numpy as jnp
 from jax import config
 config.update("jax_enable_x64", True)
 
+if(len(sys.argv) > 8 and sys.argv[-1] == 'CPU'):
+    jax.config.update('jax_platform_name', 'cpu')
+
+
 
 Lambda = Lambdas[Lambda_idx]
 
@@ -65,12 +67,29 @@ inner_dkparp_integral = np.load('inner_dkparp_integral.npy')
 inner_dkparp_integral = inner_dkparp_integral.astype(np.float64)
 inner_dkparp_integral = np.moveaxis(inner_dkparp_integral, 0, -1)
 
+
+m_for_LO = 0
+while(m_for_LO * 2 * jnp.pi / (chimax - chimin) < Lambda):
+    m_for_LO += 1
+m_for_LO -= 1
+print('m for low pass is', m_for_LO)
+
+
 @jax.jit
-def f_KILo(chi, external_chi, Lambda):
-    return (Lambda / jnp.pi 
-            * jnp.interp(x = chi, xp = chis, 
+def jax_lo_DFT(alpha, m):
+    _L = chimax - chimin
+    return jnp.where(
+        (jnp.abs((jnp.abs(alpha)-_L) / _L) < 1e-5) | (jnp.abs(alpha / _L) < 1e-5),
+        (1 + 2 * m) / _L,
+        jnp.sin(jnp.pi/_L * alpha * (1 + 2 * m)) / jnp.sin(jnp.pi/_L * alpha) * 1/_L
+    )
+
+@jax.jit
+def f_KILo(chip, external_chi, m):
+    return (jnp.interp(x = chip, xp = chis, 
                          fp = _KI, left = 0, right = 0) 
-            * jnp.sinc(Lambda * (external_chi - chi) / np.pi))
+            * jax_lo_DFT(alpha = external_chi - chip, 
+                                   m = m))
 
 chi_bin_edges = np.linspace(chimin*(1+1e-8), chimax*(1 - 1e-8), n_bins + 1)
 chi_bin_centers = (chi_bin_edges[1:] + chi_bin_edges[:-1])/2
@@ -90,19 +109,19 @@ def f_auto_integrand(chi, chip, _chib):
     LoLo_integrand  = jnp.where(_idxs,
                                f_KILo(plus, 
                                       external_chi = chi,
-                                      Lambda=Lambda) 
+                                      m = m_for_LO) 
                                 * f_KILo(mins, 
                                          external_chi = chip,
-                                         Lambda=Lambda),
+                                         m = m_for_LO),
                                0)
 
     LoLo_integrand += jnp.where(_idxs,
                                f_KILo(mins, 
                                       external_chi = chi,
-                                      Lambda=Lambda) 
+                                      m = m_for_LO) 
                                 * f_KILo(plus, 
                                          external_chi = chip,
-                                         Lambda=Lambda),0)
+                                         m = m_for_LO),0)
     LoLo_integrand *= (2 / _chib) * deltas.reshape(1, -1)
     LoLo_integrand = jnp.einsum('pd, pdl->pld', LoLo_integrand,
                                 interp1dx(xq = _chib.reshape(-1),x = chibs, 
@@ -129,7 +148,7 @@ def f_cross_integrand(chi, chip, _chib):
     cross_integrand *= jnp.where(_idx,
                                  f_KILo(2*_chib - chi, 
                                         external_chi = chip,
-                                        Lambda=Lambda), 0)
+                                        m = m_for_LO), 0)
     return cross_integrand
 
 
@@ -183,11 +202,14 @@ def _rng_spawn(rng, n_children):
 
 
 n_estimates = 2**3
-n_points = 2**16
+n_points = 2**17
 estimates = np.zeros((n_estimates, 100))
 
 
 rngs = _rng_spawn(qrng.rng, n_estimates)
+
+
+edges = np.concatenate(([10], np.linspace(chimin*.9, chimax*1.1, 64), [chimax_sample]))
 
 for i in trange(n_estimates):
     sample = qrng.random(n = n_points)
@@ -200,7 +222,6 @@ for i in trange(n_estimates):
 
     estimates[i] = jnp.mean(f_unfiltered(_chis, _chips), axis = 0)
 
-    edges = np.concatenate(([10], np.linspace(chimin*.9, chimax*1.1, 64), [chimax_sample]))
     for (l3, r3) in zip(edges, edges[1:]):
         a = np.array([l1, l2, l3, ])
         b = np.array([r1, r2, r3, ])
